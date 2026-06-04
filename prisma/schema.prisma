@@ -1,0 +1,156 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  name             String
+  phone            String   @unique
+  cnic             String   @unique
+  pin_hash         String
+  role             String   // "student" | "parent"
+  account_number   String   @unique
+  balance          Float    @default(0)
+  monthly_limit    Float?
+  kyc_verified     Boolean  @default(false)
+  is_blocked       Boolean  @default(false)
+  university       String?
+  degree           String?
+  profile_image    String?
+  parent_id        String?
+  parent           User?    @relation("Family", fields: [parent_id], references: [id])
+  children         User[]   @relation("Family")
+  sent_txns        Transaction[] @relation("SentTxns")
+  recv_txns        Transaction[] @relation("RecvTxns")
+  goals            SavingsGoal[]
+  subscriptions    Subscription[]
+  budgets          BudgetLimit[]
+  semester_plans   SemesterPlan[]
+  notifications    Notification[]
+  saved_accounts   SavedAccount[]
+  spending_alerts  SpendingAlert[]
+  last_login       DateTime?
+  failed_pin_attempts Int  @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  user_id         String
+  user            User     @relation("SentTxns", fields: [user_id], references: [id])
+  type            String   // "credit" | "debit"
+  status          String   // "pending" | "completed" | "failed"
+  amount          Float
+  fee             Float    @default(0)
+  description     String
+  category        String   @default("other")
+  channel         String?
+  bank_code       String?
+  reference_number String?
+  counterparty_name    String?
+  counterparty_account String?
+  counterparty_user_id String?
+  counterparty_user    User?  @relation("RecvTxns", fields: [counterparty_user_id], references: [id])
+  created_at      DateTime @default(now())
+  @@index([user_id, created_at])
+  @@index([user_id, category])
+}
+
+// 4.4 Semester Budget Planner
+model SemesterPlan {
+  id                  String   @id @default(cuid())
+  user_id             String
+  user                User     @relation(fields: [user_id], references: [id])
+  name                String   // e.g. "Fall 2025"
+  total_allowance     Float
+  start_date          DateTime
+  end_date            DateTime
+  monthly_limit       Float    // auto-calculated
+  weekly_limit        Float    // auto-calculated
+  is_active           Boolean  @default(true)
+  created_at          DateTime @default(now())
+}
+
+// 4.5 Savings Goals
+model SavingsGoal {
+  id            String   @id @default(cuid())
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id])
+  name          String
+  emoji         String   @default("🎯")
+  category      String   @default("general") // "laptop"|"course"|"books"|"trip"|"general"
+  target_amount Float
+  saved_amount  Float    @default(0)
+  target_date   DateTime
+  completed     Boolean  @default(false)
+  created_at    DateTime @default(now())
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id])
+  name        String
+  emoji       String   @default("📱")
+  amount      Float
+  billing_day Int
+  active      Boolean  @default(true)
+  created_at  DateTime @default(now())
+}
+
+model BudgetLimit {
+  id         String   @id @default(cuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  category   String
+  limit      Float
+  month      Int
+  year       Int
+  created_at DateTime @default(now())
+  @@unique([user_id, category, month, year])
+}
+
+// 4.2 Parent spending alerts
+model SpendingAlert {
+  id          String   @id @default(cuid())
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id])
+  threshold   Float    // e.g. 80 (percent) or absolute amount
+  alert_type  String   // "percent" | "amount" | "category"
+  category    String?
+  active      Boolean  @default(true)
+  created_at  DateTime @default(now())
+}
+
+model SavedAccount {
+  id            String   @id @default(cuid())
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id])
+  nickname      String
+  account_type  String
+  bank_code     String?
+  wallet_id     String?
+  iban          String?
+  account_title String
+  phone         String?
+  created_at    DateTime @default(now())
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  title      String
+  body       String
+  type       String
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+  @@index([user_id, read])
+}
