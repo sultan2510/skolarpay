@@ -1130,7 +1130,7 @@ function ParentDash({ token, user }) {
                   </div>
                   <div>
                     <div style={{ fontSize:11, color:C.sub }}>Spent This Month</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:C.c1, marginTop:2 }}>Rs. {c.spentThisMonth || 0}</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:C.c1, marginTop:2 }}>Rs. {c.monthly_spent || 0}</div>
                   </div>
                 </div>
               </Card>
