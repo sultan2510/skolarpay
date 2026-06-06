@@ -135,11 +135,61 @@ function NavBtn({ active, icon, label, onClick }) {
   );
 }
 
+function SidebarContent({ user, screen, setScreen, logout, onNavClick }) {
+  const nav = (s) => { setScreen(s); if (onNavClick) onNavClick(); };
+  return (
+    <>
+      <div>
+        <div style={{ fontSize:22, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:35, paddingLeft:10 }}>SkolarPay</div>
+        <div style={{ color:C.sub, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, paddingLeft:10, marginBottom:12 }}>Workspace</div>
+
+        {user?.role === 'parent' ? (
+          <>
+            <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => nav('p_dash')} />
+            <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => nav('p_reports')} />
+          </>
+        ) : (
+          <>
+            <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => nav('dashboard')} />
+            <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => nav('wallet')} />
+            <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => nav('pay')} />
+            <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => nav('budget')} />
+            <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => nav('goals')} />
+            <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => nav('analytics')} />
+            <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => nav('reports')} />
+          </>
+        )}
+        <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => nav('profile')} />
+      </div>
+
+      <div style={glass({ padding:14, display:'flex', alignItems:'center', justifyContent:'space-between' })}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ width:34, height:34, borderRadius:10, background: user?.role==='parent' ? C.c1 : C.p1, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>
+            {user?.name ? user.name[0].toUpperCase() : 'U'}
+          </div>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {user?.name || 'Guest'}
+            </div>
+            <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>
+              {user?.role ? `${user.role} account` : 'Logged Out'}
+            </div>
+          </div>
+        </div>
+        <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>
+          🚪
+        </button>
+      </div>
+    </>
+  );
+}
+
 export default function MainApp() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('sp_token');
@@ -175,7 +225,6 @@ export default function MainApp() {
     setScreen('dashboard');
   };
 
-  // ── THE FIX: guard against user being null ──
   const renderScreen = () => {
     if (!user) {
       return (
@@ -222,53 +271,54 @@ export default function MainApp() {
   }
 
   return (
-    <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif', display:'flex' }}>
-      <div style={{ width:260, background:C.mid, borderRight:`1px solid ${C.border}`, padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
-        <div>
-          <div style={{ fontSize:22, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:35, paddingLeft:10 }}>SkolarPay</div>
-          <div style={{ color:C.sub, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, paddingLeft:10, marginBottom:12 }}>Workspace</div>
+    <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
 
-          {user?.role === 'parent' ? (
-            <>
-              <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => setScreen('p_dash')} />
-              <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => setScreen('p_reports')} />
-            </>
-          ) : (
-            <>
-              <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => setScreen('dashboard')} />
-              <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => setScreen('wallet')} />
-              <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => setScreen('pay')} />
-              <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => setScreen('budget')} />
-              <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => setScreen('goals')} />
-              <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => setScreen('analytics')} />
-              <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => setScreen('reports')} />
-            </>
-          )}
-          <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => setScreen('profile')} />
+      {/* ── MOBILE TOP BAR ── */}
+      <div className="sp-mobile-bar" style={{
+        display:'none', position:'sticky', top:0, zIndex:100,
+        background:C.mid, borderBottom:`1px solid ${C.border}`,
+        padding:'14px 20px', justifyContent:'space-between', alignItems:'center'
+      }}>
+        <div style={{ fontSize:18, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+          SkolarPay
         </div>
-
-        <div style={glass({ padding:14, display:'flex', alignItems:'center', justifyContent:'space-between' })}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background: user?.role==='parent' ? C.c1 : C.p1, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>
-              {user?.name ? user.name[0].toUpperCase() : 'U'}
-            </div>
-            <div>
-              <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {user?.name || 'Guest'}
-              </div>
-              <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>
-                {user?.role ? `${user.role} account` : 'Logged Out'}
-              </div>
-            </div>
-          </div>
-          <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>
-            🚪
-          </button>
-        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          style={{ background:'none', border:`1px solid ${C.border}`, color:C.text, borderRadius:8, padding:'6px 14px', cursor:'pointer', fontSize:18, lineHeight:1 }}
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
       </div>
 
-      <div style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
-        {renderScreen()}
+      {/* ── MOBILE DRAWER OVERLAY ── */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width:270, background:C.mid, height:'100%', padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between', borderRight:`1px solid ${C.border}` }}
+          >
+            <SidebarContent user={user} screen={screen} setScreen={setScreen} logout={logout} onNavClick={() => setMobileMenuOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex' }}>
+        {/* ── DESKTOP SIDEBAR ── */}
+        <div className="sp-sidebar" style={{
+          width:260, background:C.mid, borderRight:`1px solid ${C.border}`,
+          padding:'30px 20px', display:'flex', flexDirection:'column',
+          justifyContent:'space-between', minHeight:'100vh', flexShrink:0
+        }}>
+          <SidebarContent user={user} screen={screen} setScreen={setScreen} logout={logout} />
+        </div>
+
+        {/* ── MAIN CONTENT ── */}
+        <div className="sp-main" style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
+          {renderScreen()}
+        </div>
       </div>
     </div>
   );
@@ -316,7 +366,7 @@ function AuthScreen({ onLogin }) {
 
   return (
     <div style={{ background:C.dark, minHeight:'100vh', display:'flex', justifyContent:'center', alignItems:'center', fontFamily:'"Plus Jakarta Sans", sans-serif', padding:20 }}>
-      <div style={glass({ width:420, padding:35 })}>
+      <div style={glass({ width:'100%', maxWidth:420, padding:35 })}>
         <div style={{ textAlign:'center', marginBottom:30 }}>
           <div style={{ fontSize:26, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:6 }}>SkolarPay</div>
           <div style={{ color:C.sub, fontSize:13 }}>Distributed Student Fiscal Protocol</div>
@@ -366,7 +416,7 @@ function DashboardHome({ token, user, setScreen }) {
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:35 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:35, flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Welcome back, {user.name}!</h1>
           <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Secure Token Ledger Active</div>
@@ -376,19 +426,19 @@ function DashboardHome({ token, user, setScreen }) {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }} className="sp-grid-2">
         <div>
           <Card style={{ background:`linear-gradient(135deg, rgba(91,79,232,0.2), rgba(15,14,26,0.5))`, border:`1px solid rgba(91,79,232,0.3)`, padding:30 }}>
             <div style={{ color:C.sub, fontSize:14, fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}>Available Escrow Liquidity</div>
             <div style={{ fontSize:42, fontWeight:900, marginTop:10, color:C.text }}>Rs. {data.balance.toLocaleString()}.00</div>
-            <div style={{ display:'flex', gap:14, marginTop:25 }}>
+            <div style={{ display:'flex', gap:14, marginTop:25, flexWrap:'wrap' }}>
               <button onClick={() => setScreen('wallet')} style={filled(C.p1)}>Send Money</button>
               <button onClick={() => setScreen('pay')} style={ghost(C.pl)}>Pay Bills</button>
             </div>
           </Card>
 
           <h3 style={{ fontSize:16, fontWeight:700, marginBottom:16 }}>Fiduciary Accelerators</h3>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }} className="sp-grid-3">
             <QuickLink icon="📱" label="Mobile Recharge" sub="Instant network topup" onClick={() => setScreen('pay')} />
             <QuickLink icon="📅" label="Semester Budget" sub="Tracking allocations" onClick={() => setScreen('budget')} />
             <QuickLink icon="🎯" label="Savings System" sub="Fund strategic goals" onClick={() => setScreen('goals')} />
@@ -472,7 +522,7 @@ function WalletScreen({ token }) {
   return (
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Digital Wallet Ledger</h1>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }} className="sp-grid-2">
         <div>
           <Card title="Execute Peer Trust Transfer">
             <Alert text={err} type="error" />
@@ -493,7 +543,7 @@ function WalletScreen({ token }) {
             <div style={{ fontSize:32, fontWeight:900, marginTop:6 }}>Rs. {(data?.balance ?? 0).toLocaleString()}.00</div>
           </Card>
 
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:24, marginBottom:12 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:24, marginBottom:12, flexWrap:'wrap', gap:8 }}>
             <h3 style={{ fontSize:15, fontWeight:700, margin:0 }}>Audit History Logs</h3>
             <select value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ background:C.mid, color:C.text, border:`1px solid ${C.border}`, padding:'6px 12px', borderRadius:8, fontSize:12, outline:'none' }}>
               <option value="all">Filter: All Categories</option>
@@ -637,7 +687,7 @@ function BudgetScreen({ token }) {
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Semester Fiscal Budget Architect</h1>
       {plan ? (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }} className="sp-grid-2">
           <Card title={`Active Configuration: ${plan.title}`}>
             <div style={{ color:C.sub, fontSize:13 }}>Total Allotted Term Capital</div>
             <div style={{ fontSize:28, fontWeight:800, color:C.text, marginTop:4, marginBottom:20 }}>Rs. {plan.totalAllowance.toLocaleString()}</div>
@@ -744,7 +794,7 @@ function GoalsScreen({ token }) {
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Strategic Savings Vaults</h1>
       <Alert text={err} type="error" />
       <Alert text={success} type="success" />
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }} className="sp-grid-2">
         <div>
           <Card title="Instantiate Vault Goal Objective">
             <form onSubmit={handleCreate}>
@@ -816,7 +866,7 @@ function AnalyticsScreen({ token }) {
   return (
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Vector Analytics Breakdown</h1>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1.2fr', gap:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1.2fr', gap:24 }} className="sp-grid-2">
         <Card title="Structural Outlay Ratios">
           {data.breakdown && data.breakdown.length > 0 ? (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
@@ -872,7 +922,7 @@ function ReportsScreen({ token }) {
 
   return (
     <div style={{ maxWidth:800, margin:'0 auto' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:30 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:30, flexWrap:'wrap', gap:12 }}>
         <h1 style={{ fontSize:26, fontWeight:800, margin:0 }}>Sovereign Audit Statement</h1>
         <select value={days} onChange={e => setDays(e.target.value)} style={{ background:C.mid, color:C.text, border:`1px solid ${C.border}`, padding:'8px 16px', borderRadius:10, fontSize:13, outline:'none' }}>
           <option value="7">Trailing 7 Days Range</option>
@@ -881,14 +931,14 @@ function ReportsScreen({ token }) {
         </select>
       </div>
       <Card>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:`1px solid ${C.border}`, paddingBottom:20, marginBottom:20 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:`1px solid ${C.border}`, paddingBottom:20, marginBottom:20, flexWrap:'wrap', gap:12 }}>
           <div>
             <div style={{ fontSize:18, fontWeight:800 }}>SkolarPay Fiscal Verification Manifest</div>
             <div style={{ fontSize:12, color:C.sub, marginTop:2 }}>Scope: Past {days} Days Ledger Execution Logs</div>
           </div>
           <button onClick={() => window.print()} style={ghost(C.pl, '6px 14px')}>Print Statement</button>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }} className="sp-grid-3">
           <div>
             <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Total Debit Outflows</div>
             <div style={{ fontSize:20, fontWeight:800, color:C.r1, marginTop:2 }}>Rs. {data.totalSpent?.toLocaleString() || 0}</div>
@@ -1040,7 +1090,7 @@ function ParentDash({ token, user }) {
 
   return (
     <div>
-      <div style={{ marginBottom:35, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+      <div style={{ marginBottom:35, display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Guardian Command Console</h1>
           <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Authority Entity: {user.name}</div>
@@ -1050,7 +1100,7 @@ function ParentDash({ token, user }) {
         </button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24 }} className="sp-grid-2">
         <div>
           <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Linked Student Dependent Pipelines</h3>
           {children.length === 0 ? (
@@ -1058,7 +1108,7 @@ function ParentDash({ token, user }) {
           ) : (
             children.map(c => (
               <Card key={c.id} title={c.name} action={<span style={{ fontSize:11, fontWeight:700, color:c.is_blocked?C.r1:C.g1, background:c.is_blocked?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{c.is_blocked ? 'SPENDING LOCKED' : 'OPERATIONAL'}</span>}>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginTop:10 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginTop:10 }} className="sp-grid-3">
                   <div>
                     <div style={{ fontSize:11, color:C.sub }}>Escrow Liquid Balance</div>
                     <div style={{ fontSize:16, fontWeight:700, color:C.text, marginTop:2 }}>Rs. {c.balance || 0}</div>
@@ -1134,7 +1184,7 @@ function ParentReports({ token }) {
           reports.map(r => (
             <div key={r.childId} style={{ marginBottom:25, borderBottom:`1px solid ${C.border}`, paddingBottom:20 }}>
               <h4 style={{ margin:'0 0 10px 0', fontSize:15, color:C.text }}>Log Tracking Stream for: {r.name}</h4>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:20 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:20 }} className="sp-grid-2">
                 <div style={glass({ padding:14 })}>
                   <div style={{ fontSize:11, color:C.sub }}>Gross Expenditures Vol</div>
                   <div style={{ fontSize:20, fontWeight:800, color:C.r1, marginTop:4 }}>Rs. {r.totalSpent?.toLocaleString() || 0}</div>

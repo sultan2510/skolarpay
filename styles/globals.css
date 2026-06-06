@@ -14,12 +14,13 @@ input, button, select, textarea { font-family: inherit; }
 
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 768px) {
-  .sp-sidebar { display: none !important; }
-  .sp-main    { padding: 16px !important; }
-  .sp-grid-2  { grid-template-columns: 1fr !important; }
-  .sp-grid-3  { grid-template-columns: 1fr 1fr !important; }
+  .sp-sidebar     { display: none !important; }
+  .sp-mobile-bar  { display: flex !important; }
+  .sp-main        { padding: 16px !important; max-height: unset !important; }
+  .sp-grid-2      { grid-template-columns: 1fr !important; }
+  .sp-grid-3      { grid-template-columns: 1fr 1fr !important; }
 }
 
 @media (max-width: 480px) {
-  .sp-grid-3  { grid-template-columns: 1fr !important; }
+  .sp-grid-3      { grid-template-columns: 1fr !important; }
 }
