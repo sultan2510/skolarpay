@@ -1,13 +1,17 @@
 // pages/index.js — SkolarPay Complete GUI
+// All 8 modules: Auth, Wallet, Parent, Transactions,
+// Expense Tracking, Semester Budget, Savings Goals, Reports
 import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 
+// ─── COLORS ──────────────────────────────────────────────────
 const C = {
   p1:'#5B4FE8', p2:'#7B6FF0', p3:'#B0A8F8', pl:'#EEEDFD',
   c1:'#06B6D4', g1:'#10B981', g2:'#D1FAE5',
   r1:'#EF4444', r2:'#FEE2E2', a1:'#F59E0B', a2:'#FEF3C7',
   dark:'#0F0E1A', mid:'#1A1830', card:'rgba(255,255,255,0.06)',
   border:'rgba(255,255,255,0.09)', text:'#F1F0FF', sub:'rgba(241,240,255,0.5)',
+  // category colors
   food:'#F59E0B', transport:'#3B82F6', education:'#8B5CF6',
   shopping:'#EC4899', entertainment:'#EF4444', health:'#10B981',
   utilities:'#F59E0B', transfer:'#06B6D4', savings:'#10B981',
@@ -40,6 +44,7 @@ const BILLS = [
   { id:'nayatel', label:'Nayatel Internet', type:'Internet', icon:'🌐' }
 ];
 
+// ─── GLASSMORPHISM HELPERS ───────────────────────────────────
 const glass = (more={}) => ({
   background: C.card,
   backdropFilter: 'blur(16px)',
@@ -71,6 +76,7 @@ const filled = (color, pad='10px 16px') => ({
   transition: 'all 0.2s ease'
 });
 
+// ─── CUSTOM REUSABLE COMPONENTS ──────────────────────────────
 function Card({ children, style={}, title, action }) {
   return (
     <div style={glass({ padding: 24, marginBottom: 20, ...style })}>
@@ -121,6 +127,7 @@ function Alert({ text, type='warn' }) {
   );
 }
 
+// ─── NAV BUTTON (moved outside MainApp so it's always reachable) ──
 function NavBtn({ active, icon, label, onClick }) {
   return (
     <div onClick={onClick} style={{
@@ -135,61 +142,12 @@ function NavBtn({ active, icon, label, onClick }) {
   );
 }
 
-function SidebarContent({ user, screen, setScreen, logout, onNavClick }) {
-  const nav = (s) => { setScreen(s); if (onNavClick) onNavClick(); };
-  return (
-    <>
-      <div>
-        <div style={{ fontSize:22, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:35, paddingLeft:10 }}>SkolarPay</div>
-        <div style={{ color:C.sub, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, paddingLeft:10, marginBottom:12 }}>Workspace</div>
-
-        {user?.role === 'parent' ? (
-          <>
-            <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => nav('p_dash')} />
-            <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => nav('p_reports')} />
-          </>
-        ) : (
-          <>
-            <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => nav('dashboard')} />
-            <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => nav('wallet')} />
-            <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => nav('pay')} />
-            <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => nav('budget')} />
-            <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => nav('goals')} />
-            <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => nav('analytics')} />
-            <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => nav('reports')} />
-          </>
-        )}
-        <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => nav('profile')} />
-      </div>
-
-      <div style={glass({ padding:14, display:'flex', alignItems:'center', justifyContent:'space-between' })}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:10, background: user?.role==='parent' ? C.c1 : C.p1, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>
-            {user?.name ? user.name[0].toUpperCase() : 'U'}
-          </div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {user?.name || 'Guest'}
-            </div>
-            <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>
-              {user?.role ? `${user.role} account` : 'Logged Out'}
-            </div>
-          </div>
-        </div>
-        <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>
-          🚪
-        </button>
-      </div>
-    </>
-  );
-}
-
+// ─── MAIN CONTAINER ──────────────────────────────────────────
 export default function MainApp() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState('dashboard');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('sp_token');
@@ -226,14 +184,6 @@ export default function MainApp() {
   };
 
   const renderScreen = () => {
-    if (!user) {
-      return (
-        <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'60vh', flexDirection:'column', gap:12 }}>
-          <div style={{ fontSize:22, fontWeight:800, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>SkolarPay</div>
-          <div style={{ color:C.sub, fontSize:13 }}>Loading your profile...</div>
-        </div>
-      );
-    }
     if (user.role === 'parent') {
       switch (screen) {
         case 'p_dash':    return <ParentDash token={token} user={user} />;
@@ -260,7 +210,7 @@ export default function MainApp() {
       <div style={{ background:C.dark, minHeight:'100vh', display:'flex', justifyContent:'center', alignItems:'center', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:28, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:10 }}>SkolarPay</div>
-          <div style={{ color:C.sub, fontSize:13 }}>Loading secure ledger environment...</div>
+          <div style={{ color:C.sub, fontSize:13 }}>Loading...</div>
         </div>
       </div>
     );
@@ -271,59 +221,71 @@ export default function MainApp() {
   }
 
   return (
-    <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
+    <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif', display:'flex' }}>
 
-      {/* ── MOBILE TOP BAR ── */}
-      <div className="sp-mobile-bar" style={{
-        display:'none', position:'sticky', top:0, zIndex:100,
-        background:C.mid, borderBottom:`1px solid ${C.border}`,
-        padding:'14px 20px', justifyContent:'space-between', alignItems:'center'
-      }}>
-        <div style={{ fontSize:18, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-          SkolarPay
+      {/* ── SIDEBAR NAVIGATION ── */}
+      <div style={{ width:260, background:C.mid, borderRight:`1px solid ${C.border}`, padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+
+        {/* Top nav links */}
+        <div>
+          <div style={{ fontSize:22, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:35, paddingLeft:10 }}>SkolarPay</div>
+
+          <div style={{ color:C.sub, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, paddingLeft:10, marginBottom:12 }}>Workspace</div>
+
+          {user?.role === 'parent' ? (
+            <>
+              <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => setScreen('p_dash')} />
+              <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => setScreen('p_reports')} />
+            </>
+          ) : (
+            <>
+              <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => setScreen('dashboard')} />
+              <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => setScreen('wallet')} />
+              <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => setScreen('pay')} />
+              <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => setScreen('budget')} />
+              <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => setScreen('goals')} />
+              <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => setScreen('analytics')} />
+              <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => setScreen('reports')} />
+            </>
+          )}
+          <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => setScreen('profile')} />
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ background:'none', border:`1px solid ${C.border}`, color:C.text, borderRadius:8, padding:'6px 14px', cursor:'pointer', fontSize:18, lineHeight:1 }}
-        >
-          {mobileMenuOpen ? '✕' : '☰'}
-        </button>
-      </div>
 
-      {/* ── MOBILE DRAWER OVERLAY ── */}
-      {mobileMenuOpen && (
-        <div
-          onClick={() => setMobileMenuOpen(false)}
-          style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ width:270, background:C.mid, height:'100%', padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between', borderRight:`1px solid ${C.border}` }}
-          >
-            <SidebarContent user={user} screen={screen} setScreen={setScreen} logout={logout} onNavClick={() => setMobileMenuOpen(false)} />
+        {/* ── USER TAG AT BOTTOM ── */}
+        <div style={glass({ padding:14, display:'flex', alignItems:'center', justifyContent:'space-between' })}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            {/* Avatar Bubble */}
+            <div style={{ width:34, height:34, borderRadius:10, background: user?.role==='parent' ? C.c1 : C.p1, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>
+              {user?.name ? user.name[0].toUpperCase() : 'U'}
+            </div>
+            {/* User Name & Role */}
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {user?.name || 'Guest'}
+              </div>
+              <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>
+                {user?.role ? `${user.role} account` : 'Logged Out'}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-
-      <div style={{ display:'flex' }}>
-        {/* ── DESKTOP SIDEBAR ── */}
-        <div className="sp-sidebar" style={{
-          width:260, background:C.mid, borderRight:`1px solid ${C.border}`,
-          padding:'30px 20px', display:'flex', flexDirection:'column',
-          justifyContent:'space-between', minHeight:'100vh', flexShrink:0
-        }}>
-          <SidebarContent user={user} screen={screen} setScreen={setScreen} logout={logout} />
+          {/* Logout Button */}
+          <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>
+            🚪
+          </button>
         </div>
 
-        {/* ── MAIN CONTENT ── */}
-        <div className="sp-main" style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
-          {renderScreen()}
-        </div>
+      </div>{/* end sidebar */}
+
+      {/* ── MAIN DATA VIEW AREA ── */}
+      <div style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
+        {renderScreen()}
       </div>
+
     </div>
   );
 }
 
+// ─── AUTHENTICATION MODULE ───────────────────────────────────
 function AuthScreen({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);
   const [role, setRole] = useState('student');
@@ -352,6 +314,7 @@ function AuthScreen({ onLogin }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Server rejected request');
+
       if (isRegister) {
         setMsg('Account provisioned successfully. Proceeding to login.');
         setIsRegister(false);
@@ -366,10 +329,10 @@ function AuthScreen({ onLogin }) {
 
   return (
     <div style={{ background:C.dark, minHeight:'100vh', display:'flex', justifyContent:'center', alignItems:'center', fontFamily:'"Plus Jakarta Sans", sans-serif', padding:20 }}>
-      <div style={glass({ width:'100%', maxWidth:420, padding:35 })}>
+      <div style={glass({ width:420, padding:35 })}>
         <div style={{ textAlign:'center', marginBottom:30 }}>
           <div style={{ fontSize:26, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:6 }}>SkolarPay</div>
-          <div style={{ color:C.sub, fontSize:13 }}>Distributed Student Fiscal Protocol</div>
+          <div style={{ color:C.sub, fontSize:13 }}>Student Payment App</div>
         </div>
 
         <Alert text={err} type="error" />
@@ -377,27 +340,30 @@ function AuthScreen({ onLogin }) {
 
         <div style={{ display:'flex', background:'rgba(255,255,255,0.03)', borderRadius:12, padding:4, marginBottom:24 }}>
           <button type="button" onClick={() => { setIsRegister(false); setErr(''); }} style={{ flex:1, padding:'10px', borderRadius:10, border:'none', fontSize:13, fontWeight:600, cursor:'pointer', background: !isRegister?C.card:'transparent', color: !isRegister?C.text:C.sub }}>Sign In</button>
-          <button type="button" onClick={() => { setIsRegister(true); setErr(''); }} style={{ flex:1, padding:'10px', borderRadius:10, border:'none', fontSize:13, fontWeight:600, cursor:'pointer', background: isRegister?C.card:'transparent', color: isRegister?C.text:C.sub }}>Provision Node</button>
+          <button type="button" onClick={() => { setIsRegister(true); setErr(''); }} style={{ flex:1, padding:'10px', borderRadius:10, border:'none', fontSize:13, fontWeight:600, cursor:'pointer', background: isRegister?C.card:'transparent', color: isRegister?C.text:C.sub }}>Register</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           {isRegister && (
             <div style={{ marginBottom:16 }}>
-              <label style={{ fontSize:11, fontWeight:700, color:C.sub, textTransform:'uppercase', letterSpacing:1, display:'block', marginBottom:8 }}>System Actor Role</label>
+              <label style={{ fontSize:11, fontWeight:700, color:C.sub, textTransform:'uppercase', letterSpacing:1, display:'block', marginBottom:8 }}>I am a:</label>
               <div style={{ display:'flex', gap:10 }}>
                 <button type="button" onClick={() => setRole('student')} style={{ flex:1, ...(role==='student' ? filled(C.p1,'10px') : ghost(C.sub,'10px')), fontSize:13 }}>Student</button>
                 <button type="button" onClick={() => setRole('parent')} style={{ flex:1, ...(role==='parent' ? filled(C.c1,'10px') : ghost(C.sub,'10px')), fontSize:13 }}>Parent / Guardian</button>
               </div>
             </div>
           )}
-          {isRegister && <Input label="Full Identity Name" value={name} onChange={setName} placeholder="e.g., Sultan Ahmed" />}
-          <Input label="Mobile Phone Identifier" value={phone} onChange={setPhone} placeholder="e.g., 03001112223" />
-          <Input label="Secure Secret PIN (4-Digits)" type="password" value={pin} onChange={setPin} placeholder="••••" />
+
+          {isRegister && <Input label="Full Name" value={name} onChange={setName} placeholder="e.g., Sultan Ahmed" />}
+          <Input label="Phone Number" value={phone} onChange={setPhone} placeholder="e.g., 03001112223" />
+          <Input label="PIN (4 digits)" type="password" value={pin} onChange={setPin} placeholder="••••" />
+
           {isRegister && role === 'student' && (
-            <Input label="Associated Parent Phone Identifier" value={parentPhone} onChange={setParentPhone} placeholder="e.g., 03009998887" />
+            <Input label="Parent's Phone Number" value={parentPhone} onChange={setParentPhone} placeholder="e.g., 03009998887" />
           )}
+
           <button type="submit" style={{ width:'100%', marginTop:10, ...filled(role==='parent' ? C.c1 : C.p1, '14px') }}>
-            {isRegister ? 'Execute Registration' : 'Authenticate Session'}
+            {isRegister ? 'Create Account' : 'Sign In'}
           </button>
         </form>
       </div>
@@ -405,6 +371,7 @@ function AuthScreen({ onLogin }) {
   );
 }
 
+// ─── STUDENT OVERVIEW / DASHBOARD HOME ────────────────────────
 function DashboardHome({ token, user, setScreen }) {
   const [data, setData] = useState(null);
   useEffect(() => {
@@ -412,58 +379,59 @@ function DashboardHome({ token, user, setScreen }) {
       .then(r => r.json()).then(setData);
   }, [token]);
 
-  if (!data) return <div style={{ color:C.sub }}>Fetching ledger snapshot...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Loading...</div>;
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:35, flexWrap:'wrap', gap:12 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:35 }}>
         <div>
           <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Welcome back, {user.name}!</h1>
-          <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Secure Token Ledger Active</div>
+          <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Account Active</div>
         </div>
         <div style={{ fontSize:13, fontWeight:600, background:C.card, padding:'8px 16px', borderRadius:20, border:`1px solid ${C.border}` }}>
-          🔴 Network Node Live
+          🟢 Online
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }} className="sp-grid-2">
+      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }}>
         <div>
           <Card style={{ background:`linear-gradient(135deg, rgba(91,79,232,0.2), rgba(15,14,26,0.5))`, border:`1px solid rgba(91,79,232,0.3)`, padding:30 }}>
-            <div style={{ color:C.sub, fontSize:14, fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}>Available Escrow Liquidity</div>
+            <div style={{ color:C.sub, fontSize:14, fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}>Your Balance</div>
             <div style={{ fontSize:42, fontWeight:900, marginTop:10, color:C.text }}>Rs. {data.balance.toLocaleString()}.00</div>
-            <div style={{ display:'flex', gap:14, marginTop:25, flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:14, marginTop:25 }}>
               <button onClick={() => setScreen('wallet')} style={filled(C.p1)}>Send Money</button>
               <button onClick={() => setScreen('pay')} style={ghost(C.pl)}>Pay Bills</button>
             </div>
           </Card>
 
-          <h3 style={{ fontSize:16, fontWeight:700, marginBottom:16 }}>Fiduciary Accelerators</h3>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }} className="sp-grid-3">
+          <h3 style={{ fontSize:16, fontWeight:700, marginBottom:16 }}>Quick Actions</h3>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
             <QuickLink icon="📱" label="Mobile Recharge" sub="Instant network topup" onClick={() => setScreen('pay')} />
             <QuickLink icon="📅" label="Semester Budget" sub="Tracking allocations" onClick={() => setScreen('budget')} />
             <QuickLink icon="🎯" label="Savings System" sub="Fund strategic goals" onClick={() => setScreen('goals')} />
           </div>
 
-          <Card title="Recent Ledger Clearances" action={<button onClick={() => setScreen('wallet')} style={{ background:'none', border:'none', color:C.p2, fontWeight:600, cursor:'pointer' }}>View All History</button>}>
+          <Card title="Recent Transactions" action={<button onClick={() => setScreen('wallet')} style={{ background:'none', border:'none', color:C.p2, fontWeight:600, cursor:'pointer' }}>View All</button>}>
             <TransactionList transactions={data.recentTransactions} />
           </Card>
         </div>
 
         <div>
-          <Card title="Monthly Spending Limit">
+          <Card title="Monthly Limit">
             <div style={{ fontSize:22, fontWeight:800, color:C.text, marginBottom:6 }}>
               Rs. {(data?.spentThisMonth ?? 0).toLocaleString()} <span style={{ fontSize:14, color:C.sub, fontWeight:500 }}>spent</span>
             </div>
             {data?.spendingLimit ? (
               <>
-                <div style={{ fontSize:12, color:C.sub, marginBottom:10 }}>Ceiling Threshold: Rs. {data.spendingLimit.toLocaleString()}</div>
+                <div style={{ fontSize:12, color:C.sub, marginBottom:10 }}>Limit: Rs. {data.spendingLimit.toLocaleString()}</div>
                 <ProgressBar value={data.spentThisMonth} max={data.spendingLimit} color={data.spentThisMonth > data.spendingLimit ? C.r1 : C.p1} />
-                {data.spentThisMonth > data.spendingLimit && <div style={{ color:C.r1, fontSize:11, fontWeight:600, marginTop:8 }}>⚠️ Limit Exceeded. Parent node alerted.</div>}
+                {data.spentThisMonth > data.spendingLimit && <div style={{ color:C.r1, fontSize:11, fontWeight:600, marginTop:8 }}>⚠️ Limit Exceeded. Parent notified.</div>}
               </>
             ) : (
-              <div style={{ fontSize:12, color:C.sub, fontStyle:'italic' }}>No constraint limit imposed by parent node.</div>
+              <div style={{ fontSize:12, color:C.sub, fontStyle:'italic' }}>No spending limit set by parent.</div>
             )}
           </Card>
+
           <NotificationsBox token={token} />
         </div>
       </div>
@@ -481,6 +449,7 @@ function QuickLink({ icon, label, sub, onClick }) {
   );
 }
 
+// ─── DIGITAL WALLET MODULE ───────────────────────────────────
 function WalletScreen({ token }) {
   const [data, setData] = useState(null);
   const [destPhone, setDestPhone] = useState('');
@@ -517,36 +486,36 @@ function WalletScreen({ token }) {
     } catch (e) { setErr(e.message); }
   };
 
-  if (!data) return <div style={{ color:C.sub }}>Compiling secure balance matrices...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Loading wallet...</div>;
 
   return (
     <div>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Digital Wallet Ledger</h1>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }} className="sp-grid-2">
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Wallet</h1>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
         <div>
-          <Card title="Execute Peer Trust Transfer">
+          <Card title="Send Money">
             <Alert text={err} type="error" />
             <Alert text={success} type="success" />
             <form onSubmit={handleTransfer}>
-              <Input label="Recipient Phone Identifier" value={destPhone} onChange={setDestPhone} placeholder="03XXXXXXXXX" />
-              <Input label="Value Amount (Rs.)" type="number" value={amount} onChange={setAmount} placeholder="Minimum Rs.10" />
-              <Input label="Transaction Manifest/Description" value={desc} onChange={setDesc} placeholder="e.g., Shared cafeteria meal" />
-              <Input label="Secure Secret PIN Validation" type="password" value={pin} onChange={setPin} placeholder="••••" />
-              <button type="submit" style={{ width:'100%', marginTop:10, ...filled(C.p1, '13px') }}>Dispatch Internal Escrow</button>
+              <Input label="Recipient Phone Number" value={destPhone} onChange={setDestPhone} placeholder="03XXXXXXXXX" />
+              <Input label="Amount (Rs.)" type="number" value={amount} onChange={setAmount} placeholder="Minimum Rs.10" />
+              <Input label="Description (optional)" value={desc} onChange={setDesc} placeholder="e.g., Shared cafeteria meal" />
+              <Input label="Your PIN" type="password" value={pin} onChange={setPin} placeholder="••••" />
+              <button type="submit" style={{ width:'100%', marginTop:10, ...filled(C.p1, '13px') }}>Send Money</button>
             </form>
           </Card>
         </div>
 
         <div>
           <Card style={{ background:`linear-gradient(135deg, rgba(6,182,212,0.15), transparent)`, border:`1px solid rgba(6,182,212,0.2)` }}>
-            <div style={{ color:C.sub, fontSize:13, fontWeight:600 }}>Total Cumulative Liquidity</div>
+            <div style={{ color:C.sub, fontSize:13, fontWeight:600 }}>Your Balance</div>
             <div style={{ fontSize:32, fontWeight:900, marginTop:6 }}>Rs. {(data?.balance ?? 0).toLocaleString()}.00</div>
           </Card>
 
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:24, marginBottom:12, flexWrap:'wrap', gap:8 }}>
-            <h3 style={{ fontSize:15, fontWeight:700, margin:0 }}>Audit History Logs</h3>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:24, marginBottom:12 }}>
+            <h3 style={{ fontSize:15, fontWeight:700, margin:0 }}>Transaction History</h3>
             <select value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ background:C.mid, color:C.text, border:`1px solid ${C.border}`, padding:'6px 12px', borderRadius:8, fontSize:12, outline:'none' }}>
-              <option value="all">Filter: All Categories</option>
+              <option value="all">All Categories</option>
               {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </select>
           </div>
@@ -560,6 +529,7 @@ function WalletScreen({ token }) {
   );
 }
 
+// ─── BILL PAYMENTS & RECHARGE MODULE ─────────────────────────
 function PayScreen({ token }) {
   const [activeTab, setActiveTab] = useState('recharge');
   const [mobile, setMobile] = useState('');
@@ -599,20 +569,22 @@ function PayScreen({ token }) {
 
   return (
     <div style={{ maxWidth:650, margin:'0 auto' }}>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Micro-Utility Clearinghouse</h1>
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Pay Bills & Recharge</h1>
+
       <div style={{ display:'flex', background:'rgba(255,255,255,0.03)', borderRadius:12, padding:4, marginBottom:24 }}>
-        <button onClick={() => { setActiveTab('recharge'); resetForm(); }} style={{ flex:1, padding:'12px', borderRadius:10, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', background: activeTab==='recharge'?C.card:'transparent', color: activeTab==='recharge'?C.text:C.sub }}>📱 Mobile Airtime Recharge</button>
-        <button onClick={() => { setActiveTab('bill'); resetForm(); }} style={{ flex:1, padding:'12px', borderRadius:10, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', background: activeTab==='bill'?C.card:'transparent', color: activeTab==='bill'?C.text:C.sub }}>⚡ Utility Bill Settlement</button>
+        <button onClick={() => { setActiveTab('recharge'); resetForm(); }} style={{ flex:1, padding:'12px', borderRadius:10, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', background: activeTab==='recharge'?C.card:'transparent', color: activeTab==='recharge'?C.text:C.sub }}>📱 Mobile Recharge</button>
+        <button onClick={() => { setActiveTab('bill'); resetForm(); }} style={{ flex:1, padding:'12px', borderRadius:10, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', background: activeTab==='bill'?C.card:'transparent', color: activeTab==='bill'?C.text:C.sub }}>⚡ Pay Bills</button>
       </div>
 
-      <Card title={activeTab==='recharge' ? 'Mobile Network Topup Protocol' : 'Institutional Utility Ledger'}>
+      <Card title={activeTab==='recharge' ? 'Mobile Recharge' : 'Pay a Bill'}>
         <Alert text={err} type="error" />
         <Alert text={success} type="success" />
+
         <form onSubmit={handleAction}>
           {activeTab === 'recharge' ? (
             <>
               <div style={{ marginBottom:18 }}>
-                <label style={{ fontSize:12, fontWeight:600, color:C.sub, display:'block', marginBottom:8 }}>Select Cellular Operator Network</label>
+                <label style={{ fontSize:12, fontWeight:600, color:C.sub, display:'block', marginBottom:8 }}>Select Network</label>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8 }}>
                   {NETS.map(n => (
                     <div key={n.id} onClick={() => setSelNet(n)}
@@ -623,12 +595,12 @@ function PayScreen({ token }) {
                   ))}
                 </div>
               </div>
-              <Input label="Mobile Line Endpoint Number" value={mobile} onChange={setMobile} placeholder="03XXXXXXXXX" />
+              <Input label="Mobile Number" value={mobile} onChange={setMobile} placeholder="03XXXXXXXXX" />
             </>
           ) : (
             <>
               <div style={{ marginBottom:18 }}>
-                <label style={{ fontSize:12, fontWeight:600, color:C.sub, display:'block', marginBottom:8 }}>Select Utility Distribution Node</label>
+                <label style={{ fontSize:12, fontWeight:600, color:C.sub, display:'block', marginBottom:8 }}>Select Utility</label>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:10 }}>
                   {BILLS.map(b => (
                     <div key={b.id} onClick={() => setSelBill(b)}
@@ -640,13 +612,15 @@ function PayScreen({ token }) {
                   ))}
                 </div>
               </div>
-              <Input label="Consumer / Account Identifier Number" value={consumerNum} onChange={setConsumerNum} placeholder="Enter exact manifest number" />
+              <Input label="Consumer / Account Number" value={consumerNum} onChange={setConsumerNum} placeholder="Enter your reference number" />
             </>
           )}
-          <Input label="Settlement Amount (Rs.)" type="number" value={amount} onChange={setAmount} placeholder="Enter clearing value" />
-          <Input label="Secure Secret PIN Validation" type="password" value={pin} onChange={setPin} placeholder="••••" />
+
+          <Input label="Amount (Rs.)" type="number" value={amount} onChange={setAmount} placeholder="Enter clearing value" />
+          <Input label="Your PIN" type="password" value={pin} onChange={setPin} placeholder="••••" />
+
           <button type="submit" style={{ width:'100%', marginTop:10, ...filled(activeTab==='bill' ? C.c1 : C.p1, '14px') }}>
-            Authorize Escrow Discharge
+            Pay Now
           </button>
         </form>
       </Card>
@@ -654,6 +628,7 @@ function PayScreen({ token }) {
   );
 }
 
+// ─── SEMESTER BUDGET PLANNER MODULE ──────────────────────────
 function BudgetScreen({ token }) {
   const [plan, setPlan] = useState(null);
   const [totalAllowance, setTotalAllowance] = useState('');
@@ -685,49 +660,53 @@ function BudgetScreen({ token }) {
 
   return (
     <div>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Semester Fiscal Budget Architect</h1>
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Semester Budget</h1>
+
       {plan ? (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }} className="sp-grid-2">
-          <Card title={`Active Configuration: ${plan.title}`}>
-            <div style={{ color:C.sub, fontSize:13 }}>Total Allotted Term Capital</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
+          <Card title={`Budget: ${plan.title}`}>
+            <div style={{ color:C.sub, fontSize:13 }}>Total Budget</div>
             <div style={{ fontSize:28, fontWeight:800, color:C.text, marginTop:4, marginBottom:20 }}>Rs. {plan.totalAllowance.toLocaleString()}</div>
+
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
               <div style={glass({ padding:14 })}>
-                <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Monthly Cap Ceiling</div>
+                <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Monthly Limit</div>
                 <div style={{ fontSize:18, fontWeight:700, color:C.p2, marginTop:4 }}>Rs. {plan.monthlyLimit.toLocaleString()}</div>
               </div>
               <div style={glass({ padding:14 })}>
-                <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Weekly Safe Run-rate</div>
+                <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Weekly Limit</div>
                 <div style={{ fontSize:18, fontWeight:700, color:C.c1, marginTop:4 }}>Rs. {plan.weeklyLimit.toLocaleString()}</div>
               </div>
             </div>
-            <div style={{ color:C.sub, fontSize:12, marginBottom:6 }}>Term Liquidity Depth Remaining:</div>
+
+            <div style={{ color:C.sub, fontSize:12, marginBottom:6 }}>Remaining Budget:</div>
             <ProgressBar value={plan.remainingBalance} max={plan.totalAllowance} color={C.g1} />
             <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:C.sub, marginTop:6 }}>
               <span>Spent: Rs. {(plan.totalAllowance - plan.remainingBalance).toLocaleString()}</span>
               <span>Available: Rs. {plan.remainingBalance.toLocaleString()}</span>
             </div>
           </Card>
-          <Card title="Pace Velocity Metrics">
+
+          <Card title="Budget Progress">
             <div style={{ fontSize:14, lineHeight:'1.6', color:C.text }}>
-              Your current spending vector is operating inside standard limits.
-              Keep weekly outlays underneath <strong style={{ color:C.c1 }}>Rs. {plan.weeklyLimit}</strong> to shield term endowments from premature exhaustion.
+              Your current spending is within limits.
+              Keep weekly outlays underneath <strong style={{ color:C.c1 }}>Rs. {plan.weeklyLimit}</strong> to protect your budget.
             </div>
             <div style={{ marginTop:24, background:'rgba(255,255,255,0.02)', padding:16, borderRadius:12, border:`1px solid ${C.border}` }}>
-              <div style={{ fontWeight:700, fontSize:13, marginBottom:4, color:C.g1 }}>💡 Optimization Advisory</div>
-              <div style={{ fontSize:12, color:C.sub }}>Allocating surplus weekly run-rate margins into an active savings goal node compounds capital shielding.</div>
+              <div style={{ fontWeight:700, fontSize:13, marginBottom:4, color:C.g1 }}>💡 Tip</div>
+              <div style={{ fontSize:12, color:C.sub }}>Save any leftover weekly budget into a savings goal to build up funds faster.</div>
             </div>
           </Card>
         </div>
       ) : (
         <div style={{ maxWidth:500, margin:'0 auto' }}>
-          <Card title="Initialize New Semester Constraints">
+          <Card title="Set Up Semester Budget">
             <Alert text={err} type="error" />
             <form onSubmit={handleCreate}>
-              <Input label="Academic Term Title" value={title} onChange={setTitle} placeholder="e.g., Fall Semester 2026" />
-              <Input label="Total Expected Escrow Allocation (Rs.)" type="number" value={totalAllowance} onChange={setTotalAllowance} placeholder="Total term pocket money" />
-              <Input label="Term Duration Scale (Months)" type="number" value={months} onChange={setMonths} placeholder="Standard scale is 4-5 months" />
-              <button type="submit" style={{ width:'100%', marginTop:10, ...filled(C.p1, '13px') }}>Instantiate Budget Blueprint</button>
+              <Input label="Semester Name" value={title} onChange={setTitle} placeholder="e.g., Fall Semester 2026" />
+              <Input label="Total Budget (Rs.)" type="number" value={totalAllowance} onChange={setTotalAllowance} placeholder="Total term pocket money" />
+              <Input label="Duration (Months)" type="number" value={months} onChange={setMonths} placeholder="e.g. 4 or 5 months" />
+              <button type="submit" style={{ width:'100%', marginTop:10, ...filled(C.p1, '13px') }}>Create Budget</button>
             </form>
           </Card>
         </div>
@@ -736,6 +715,7 @@ function BudgetScreen({ token }) {
   );
 }
 
+// ─── SAVINGS GOALS MODULE ────────────────────────────────────
 function GoalsScreen({ token }) {
   const [goals, setGoals] = useState([]);
   const [title, setTitle] = useState('');
@@ -791,54 +771,57 @@ function GoalsScreen({ token }) {
 
   return (
     <div>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Strategic Savings Vaults</h1>
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Savings Goals</h1>
       <Alert text={err} type="error" />
       <Alert text={success} type="success" />
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }} className="sp-grid-2">
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
         <div>
-          <Card title="Instantiate Vault Goal Objective">
+          <Card title="Create a Savings Goal">
             <form onSubmit={handleCreate}>
-              <Input label="Goal Descriptive Title" value={title} onChange={setTitle} placeholder="e.g., Next-Gen Core i9 Laptop" />
-              <Input label="Target Value Matrix (Rs.)" type="number" value={target} onChange={setTarget} placeholder="Target funding ceiling" />
+              <Input label="Goal Name" value={title} onChange={setTitle} placeholder="e.g., Next-Gen Core i9 Laptop" />
+              <Input label="Target Amount (Rs.)" type="number" value={target} onChange={setTarget} placeholder="Target funding ceiling" />
               <div style={{ marginBottom:16 }}>
-                <label style={{ fontSize:13, fontWeight:600, color:C.sub, display:'block', marginBottom:6 }}>Goal Domain Taxonomy</label>
+                <label style={{ fontSize:13, fontWeight:600, color:C.sub, display:'block', marginBottom:6 }}>Goal Type</label>
                 <select value={type} onChange={e => setType(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.04)', color:C.text, border:`1px solid ${C.border}`, padding:12, borderRadius:10, outline:'none' }}>
-                  <option value="LAPTOP">💻 Educational Computing Terminal</option>
-                  <option value="BOOKS">📚 Term Enrollment Syllabus/Books</option>
-                  <option value="REGISTRATION">🎓 Course Enrollment/Registration Fees</option>
-                  <option value="TRIP">🚌 Academic Research Symposium/Trip</option>
-                  <option value="GENERAL">🐷 Default Capital Buffer Vault</option>
+                  <option value="LAPTOP">💻 Laptop</option>
+                  <option value="BOOKS">📚 Books</option>
+                  <option value="REGISTRATION">🎓 Registration Fees</option>
+                  <option value="TRIP">🚌 Trip</option>
+                  <option value="GENERAL">🐷 General Savings</option>
                 </select>
               </div>
-              <button type="submit" style={{ width:'100%', ...filled(C.p1, '12px') }}>Provision Sinking Vault</button>
+              <button type="submit" style={{ width:'100%', ...filled(C.p1, '12px') }}>Create Goal</button>
             </form>
           </Card>
+
           {goals.length > 0 && (
-            <Card title="Execute Trust Vault Capitalization" style={{ marginTop:20 }}>
+            <Card title="Add Money to Goal" style={{ marginTop:20 }}>
               <form onSubmit={handleContribute}>
                 <div style={{ marginBottom:16 }}>
-                  <label style={{ fontSize:13, fontWeight:600, color:C.sub, display:'block', marginBottom:6 }}>Target Destination Node</label>
+                  <label style={{ fontSize:13, fontWeight:600, color:C.sub, display:'block', marginBottom:6 }}>Select Goal</label>
                   <select value={selGoalId} onChange={e => setSelGoalId(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.04)', color:C.text, border:`1px solid ${C.border}`, padding:12, borderRadius:10, outline:'none' }}>
-                    <option value="">-- Choose Target Allocation Node --</option>
+                    <option value="">-- Select a Goal --</option>
                     {goals.map(g => <option key={g.id} value={g.id}>{g.title} (Current: Rs. {g.currentAmount})</option>)}
                   </select>
                 </div>
-                <Input label="Funding Injection Amount (Rs.)" type="number" value={contribAmount} onChange={setContribAmount} placeholder="Value to deduct from wallet balance" />
-                <Input label="Secure Secret PIN Validation" type="password" value={pin} onChange={setPin} placeholder="••••" />
-                <button type="submit" style={{ width:'100%', ...filled(C.g1, '12px') }}>Inject Sovereign Allocation</button>
+                <Input label="Amount to Add (Rs.)" type="number" value={contribAmount} onChange={setContribAmount} placeholder="Will be taken from your wallet" />
+                <Input label="Your PIN" type="password" value={pin} onChange={setPin} placeholder="••••" />
+                <button type="submit" style={{ width:'100%', ...filled(C.g1, '12px') }}>Add to Goal</button>
               </form>
             </Card>
           )}
         </div>
+
         <div>
-          <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Sinking Vault Matrix Pipelines</h3>
+          <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Your Savings Goals</h3>
           {goals.length === 0 ? (
-            <div style={{ color:C.sub, fontStyle:'italic' }}>No active savings vectors initialized.</div>
+            <div style={{ color:C.sub, fontStyle:'italic' }}>No savings goals yet. Create one above.</div>
           ) : (
             goals.map(g => {
               const pct = Math.min(100, (g.currentAmount / g.targetAmount) * 100);
               return (
-                <Card key={g.id} title={g.title} action={<span style={{ fontSize:12, fontWeight:700, color:C.g1, background:'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{pct.toFixed(0)}% Vaulted</span>}>
+                <Card key={g.id} title={g.title} action={<span style={{ fontSize:12, fontWeight:700, color:C.g1, background:'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{pct.toFixed(0)}% Saved</span>}>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:8 }}>
                     <span style={{ color:C.sub }}>Current: <strong>Rs. {g.currentAmount.toLocaleString()}</strong></span>
                     <span style={{ color:C.sub }}>Target: Rs. {g.targetAmount.toLocaleString()}</span>
@@ -854,6 +837,7 @@ function GoalsScreen({ token }) {
   );
 }
 
+// ─── ANALYTICS MODULE ────────────────────────────────────────
 function AnalyticsScreen({ token }) {
   const [data, setData] = useState(null);
   useEffect(() => {
@@ -861,13 +845,13 @@ function AnalyticsScreen({ token }) {
       .then(r => r.json()).then(setData);
   }, [token]);
 
-  if (!data) return <div style={{ color:C.sub }}>Synthesizing category expense data pipelines...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Loading analytics...</div>;
 
   return (
     <div>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Vector Analytics Breakdown</h1>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1.2fr', gap:24 }} className="sp-grid-2">
-        <Card title="Structural Outlay Ratios">
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Spending Analytics</h1>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1.2fr', gap:24 }}>
+        <Card title="Spending by Category">
           {data.breakdown && data.breakdown.length > 0 ? (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
               {data.breakdown.map(b => {
@@ -886,22 +870,23 @@ function AnalyticsScreen({ token }) {
               })}
             </div>
           ) : (
-            <div style={{ color:C.sub, fontStyle:'italic' }}>No vector allocations discovered in structural history logs.</div>
+            <div style={{ color:C.sub, fontStyle:'italic' }}>No spending data yet.</div>
           )}
         </Card>
-        <Card title="System Ledger Macro Analysis">
+
+        <Card title="Summary">
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
             <div style={glass({ padding:16, borderLeft:`4px solid ${C.p1}` })}>
-              <div style={{ fontSize:12, color:C.sub }}>Gross Outflow Volume</div>
+              <div style={{ fontSize:12, color:C.sub }}>Total Spent</div>
               <div style={{ fontSize:22, fontWeight:800, color:C.text, marginTop:4 }}>Rs. {data.totalSpent?.toLocaleString() || 0}</div>
             </div>
             <div style={glass({ padding:16, borderLeft:`4px solid ${C.c1}` })}>
-              <div style={{ fontSize:12, color:C.sub }}>Clearance Frequency Count</div>
+              <div style={{ fontSize:12, color:C.sub }}>Transactions</div>
               <div style={{ fontSize:22, fontWeight:800, color:C.text, marginTop:4 }}>{data.transactionCount || 0} entries</div>
             </div>
           </div>
           <div style={{ padding:16, background:'rgba(255,255,255,0.02)', borderRadius:12, border:`1px solid ${C.border}`, fontSize:13, color:C.sub, lineHeight:1.6 }}>
-            📊 Macro analytics parse real-time categorizations derived directly from transactional strings.
+            📊 Analytics are based on your real transaction history.
           </div>
         </Card>
       </div>
@@ -909,6 +894,7 @@ function AnalyticsScreen({ token }) {
   );
 }
 
+// ─── AUDIT STATEMENTS / REPORTS SCREEN ────────────────────────
 function ReportsScreen({ token }) {
   const [data, setData] = useState(null);
   const [days, setDays] = useState('30');
@@ -918,54 +904,57 @@ function ReportsScreen({ token }) {
       .then(r => r.json()).then(setData);
   }, [token, days]);
 
-  if (!data) return <div style={{ color:C.sub }}>Exporting fiscal transaction logs...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Loading statements...</div>;
 
   return (
     <div style={{ maxWidth:800, margin:'0 auto' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:30, flexWrap:'wrap', gap:12 }}>
-        <h1 style={{ fontSize:26, fontWeight:800, margin:0 }}>Sovereign Audit Statement</h1>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:30 }}>
+        <h1 style={{ fontSize:26, fontWeight:800, margin:0 }}>Account Statement</h1>
         <select value={days} onChange={e => setDays(e.target.value)} style={{ background:C.mid, color:C.text, border:`1px solid ${C.border}`, padding:'8px 16px', borderRadius:10, fontSize:13, outline:'none' }}>
-          <option value="7">Trailing 7 Days Range</option>
-          <option value="30">Trailing 30 Days Range</option>
-          <option value="90">Trailing 90 Days Range</option>
+          <option value="7">Last 7 Days</option>
+          <option value="30">Last 30 Days</option>
+          <option value="90">Last 90 Days</option>
         </select>
       </div>
+
       <Card>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:`1px solid ${C.border}`, paddingBottom:20, marginBottom:20, flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:`1px solid ${C.border}`, paddingBottom:20, marginBottom:20 }}>
           <div>
-            <div style={{ fontSize:18, fontWeight:800 }}>SkolarPay Fiscal Verification Manifest</div>
-            <div style={{ fontSize:12, color:C.sub, marginTop:2 }}>Scope: Past {days} Days Ledger Execution Logs</div>
+            <div style={{ fontSize:18, fontWeight:800 }}>SkolarPay Statement</div>
+            <div style={{ fontSize:12, color:C.sub, marginTop:2 }}>Period: Last {days} Days</div>
           </div>
           <button onClick={() => window.print()} style={ghost(C.pl, '6px 14px')}>Print Statement</button>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }} className="sp-grid-3">
+
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
           <div>
-            <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Total Debit Outflows</div>
+            <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Total Spent</div>
             <div style={{ fontSize:20, fontWeight:800, color:C.r1, marginTop:2 }}>Rs. {data.totalSpent?.toLocaleString() || 0}</div>
           </div>
           <div>
-            <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Clearing Events Issued</div>
+            <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Transactions</div>
             <div style={{ fontSize:20, fontWeight:800, color:C.text, marginTop:2 }}>{data.transactionCount || 0} Logs</div>
           </div>
           <div>
-            <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Ledger Authentication Status</div>
+            <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Status</div>
             <div style={{ fontSize:20, fontWeight:800, color:C.g1, marginTop:2 }}>VERIFIED ✓</div>
           </div>
         </div>
-        <h4 style={{ fontSize:14, fontWeight:700, margin:'0 0 12px 0' }}>Chronological Clearance Logs</h4>
+
+        <h4 style={{ fontSize:14, fontWeight:700, margin:'0 0 12px 0' }}>Transactions</h4>
         <div style={{ border:`1px solid ${C.border}`, borderRadius:12, overflow:'hidden' }}>
           {data.rawTransactions && data.rawTransactions.length > 0 ? (
             data.rawTransactions.map((t, idx) => (
               <div key={t.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:idx%2===0?'rgba(255,255,255,0.01)':'transparent', borderBottom:idx===data.rawTransactions.length-1?'none':`1px solid ${C.border}` }}>
                 <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{t.description || 'System Allocation Transfer'}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{t.description || 'Transfer'}</div>
                   <div style={{ fontSize:11, color:C.sub, marginTop:2 }}>{new Date(t.createdAt).toLocaleDateString()} • Ref: {t.id.slice(-8).toUpperCase()}</div>
                 </div>
                 <div style={{ fontSize:14, fontWeight:700, color:C.text }}>Rs. {t.amount.toLocaleString()}</div>
               </div>
             ))
           ) : (
-            <div style={{ padding:20, color:C.sub, textAlign:'center', fontSize:13 }}>No logs match constraints inside this calendar depth block.</div>
+            <div style={{ padding:20, color:C.sub, textAlign:'center', fontSize:13 }}>No transactions found for this period.</div>
           )}
         </div>
       </Card>
@@ -973,6 +962,7 @@ function ReportsScreen({ token }) {
   );
 }
 
+// ─── PROFILE / ACCOUNT SECURITY SCREEN ───────────────────────
 function ProfileScreen({ user, token, onUpdate }) {
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -983,6 +973,7 @@ function ProfileScreen({ user, token, onUpdate }) {
     e.preventDefault();
     setErr(''); setSuccess('');
     if (newPin.length !== 4 || isNaN(newPin)) { setErr('New security PIN must be exactly 4 digits.'); return; }
+
     try {
       const res = await fetch('/api/parent/children', {
         method: 'PATCH',
@@ -999,27 +990,30 @@ function ProfileScreen({ user, token, onUpdate }) {
 
   return (
     <div style={{ maxWidth:500, margin:'0 auto' }}>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Account Node Security Settings</h1>
-      <Card title="Node Credentials Profile">
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Account Settings</h1>
+
+      <Card title="Your Profile">
         <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24, background:'rgba(255,255,255,0.02)', padding:16, borderRadius:12 }}>
-          <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>Actor Identity name:</span> <strong style={{ color:C.text }}>{user.name}</strong></div>
-          <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>Registered Network Line ID:</span> <strong style={{ color:C.text }}>{user.phone}</strong></div>
-          <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>System Authority Level:</span> <span style={{ color:user.role==='parent'?C.c1:C.p2, fontWeight:700, textTransform:'uppercase', fontSize:11 }}>{user.role} Authorization Node</span></div>
+          <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>Name:</span> <strong style={{ color:C.text }}>{user.name}</strong></div>
+          <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>Phone Number:</span> <strong style={{ color:C.text }}>{user.phone}</strong></div>
+          <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>Account Type:</span> <span style={{ color:user.role==='parent'?C.c1:C.p2, fontWeight:700, textTransform:'uppercase', fontSize:11 }}>{user.role} Account</span></div>
         </div>
       </Card>
-      <Card title="Modify Encryption Key PIN">
+
+      <Card title="Change PIN">
         <Alert text={err} type="error" />
         <Alert text={success} type="success" />
         <form onSubmit={handlePinChange}>
-          <Input label="Current Active Validation PIN" type="password" value={currentPin} onChange={setCurrentPin} placeholder="••••" />
-          <Input label="New 4-Digit Encryption Key PIN" type="password" value={newPin} onChange={setNewPin} placeholder="••••" />
-          <button type="submit" style={{ width:'100%', marginTop:10, ...filled(C.p1, '12px') }}>Update Fiduciary Signature PIN</button>
+          <Input label="Current PIN" type="password" value={currentPin} onChange={setCurrentPin} placeholder="••••" />
+          <Input label="New PIN (4 digits)" type="password" value={newPin} onChange={setNewPin} placeholder="••••" />
+          <button type="submit" style={{ width:'100%', marginTop:10, ...filled(C.p1, '12px') }}>Update PIN</button>
         </form>
       </Card>
     </div>
   );
 }
 
+// ─── PARENT MONITORING DASHBOARD MODULE ──────────────────────
 function ParentDash({ token, user }) {
   const [children, setChildren] = useState([]);
   const [sendAmount, setSendAmount] = useState('');
@@ -1040,10 +1034,14 @@ function ParentDash({ token, user }) {
   const handleActionSubmit = async (e) => {
     e.preventDefault();
     setErr(''); setSuccess('');
+
+    // Validate required fields before building payload
     if (!selChildId) { setErr('Select a student to perform an action on.'); return; }
     if (!pin)        { setErr('Enter your guardian PIN to authorise.'); return; }
 
     let payload = { child_id: selChildId, pin };
+
+    // Determine action from current tab — default to 'send' if state is unexpected
     const currentAction = ['send','limit','status'].includes(activeAction) ? activeAction : 'send';
 
     if (currentAction === 'send') {
@@ -1068,7 +1066,7 @@ function ParentDash({ token, user }) {
       });
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || 'Fiduciary constraint command rejected');
-      setSuccess('Instruction packet validated and synced to student database block.');
+      setSuccess('Done! Changes saved successfully.');
       setSendAmount(''); setLimitAmount(''); setPin('');
       fetchChildren();
     } catch (e) { setErr(e.message); }
@@ -1090,36 +1088,37 @@ function ParentDash({ token, user }) {
 
   return (
     <div>
-      <div style={{ marginBottom:35, display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
+      <div style={{ marginBottom:35, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div>
-          <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Guardian Command Console</h1>
-          <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Authority Entity: {user.name}</div>
+          <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Parent Dashboard</h1>
+          <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Logged in as: {user.name}</div>
         </div>
-        <button onClick={addDummyBalance} style={{ ...filled(C.g1, '10px 18px'), fontSize:13, whiteSpace:'nowrap' }}>
-          💰 Add Rs.20,000 Test Funds
+        <button onClick={addDummyBalance}
+          style={{ ...filled(C.g1, '10px 18px'), fontSize:13, whiteSpace:'nowrap' }}>
+          💰 Add Test Funds (Rs.20,000)
         </button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24 }} className="sp-grid-2">
+      <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24 }}>
         <div>
-          <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Linked Student Dependent Pipelines</h3>
+          <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Your Children</h3>
           {children.length === 0 ? (
-            <div style={{ color:C.sub, fontStyle:'italic' }}>No student accounts are currently linked with your parent line number identifier.</div>
+            <div style={{ color:C.sub, fontStyle:'italic' }}>No student accounts linked to your number yet.</div>
           ) : (
             children.map(c => (
-              <Card key={c.id} title={c.name} action={<span style={{ fontSize:11, fontWeight:700, color:c.is_blocked?C.r1:C.g1, background:c.is_blocked?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{c.is_blocked ? 'SPENDING LOCKED' : 'OPERATIONAL'}</span>}>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginTop:10 }} className="sp-grid-3">
+              <Card key={c.id} title={c.name} action={<span style={{ fontSize:11, fontWeight:700, color:c.isBlocked?C.r1:C.g1, background:c.isBlocked?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{c.isBlocked ? 'SPENDING LOCKED' : 'OPERATIONAL'}</span>}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginTop:10 }}>
                   <div>
-                    <div style={{ fontSize:11, color:C.sub }}>Escrow Liquid Balance</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:C.text, marginTop:2 }}>Rs. {c.balance || 0}</div>
+                    <div style={{ fontSize:11, color:C.sub }}>Balance</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:C.text, marginTop:2 }}>Rs. {c.wallet?.balance || 0}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize:11, color:C.sub }}>Ceiling Constraint</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:C.p3, marginTop:2 }}>{c.monthly_limit ? `Rs. ${c.monthly_limit}` : 'None Set'}</div>
+                    <div style={{ fontSize:11, color:C.sub }}>Spending Limit</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:C.p3, marginTop:2 }}>{c.wallet?.spendingLimit ? `Rs. ${c.wallet.spendingLimit}` : 'None Set'}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize:11, color:C.sub }}>Outflows Issued</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:C.c1, marginTop:2 }}>Rs. {c.monthly_spent || 0}</div>
+                    <div style={{ fontSize:11, color:C.sub }}>Spent This Month</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:C.c1, marginTop:2 }}>Rs. {c.spentThisMonth || 0}</div>
                   </div>
                 </div>
               </Card>
@@ -1128,37 +1127,41 @@ function ParentDash({ token, user }) {
         </div>
 
         <div>
-          <Card title="Fiduciary Directive Controls">
+          <Card title="Parent Controls">
             <div style={{ display:'flex', gap:6, background:'rgba(255,255,255,0.02)', padding:4, borderRadius:10, marginBottom:20 }}>
-              <button type="button" onClick={() => { setActiveAction('send');   setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='send'?C.card:'transparent',   color:activeAction==='send'?C.text:C.sub   }}>Dispense Pocket Money</button>
-              <button type="button" onClick={() => { setActiveAction('limit');  setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='limit'?C.card:'transparent',  color:activeAction==='limit'?C.text:C.sub  }}>Impose Ceiling Cap</button>
-              <button type="button" onClick={() => { setActiveAction('status'); setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='status'?C.card:'transparent', color:activeAction==='status'?C.text:C.sub }}>Lock/Unlock Node</button>
+              <button type="button" onClick={() => { setActiveAction('send');   setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='send'?C.card:'transparent',   color:activeAction==='send'?C.text:C.sub   }}>Send Money</button>
+              <button type="button" onClick={() => { setActiveAction('limit');  setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='limit'?C.card:'transparent',  color:activeAction==='limit'?C.text:C.sub  }}>Set Limit</button>
+              <button type="button" onClick={() => { setActiveAction('status'); setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='status'?C.card:'transparent', color:activeAction==='status'?C.text:C.sub }}>Lock/Unlock</button>
             </div>
+
             <Alert text={err} type="error" />
             <Alert text={success} type="success" />
+
             {children.length > 0 ? (
               <form onSubmit={handleActionSubmit}>
                 <div style={{ marginBottom:16 }}>
-                  <label style={{ fontSize:13, fontWeight:600, color:C.sub, display:'block', marginBottom:6 }}>Target Student Node Pipeline</label>
+                  <label style={{ fontSize:13, fontWeight:600, color:C.sub, display:'block', marginBottom:6 }}>Select Student</label>
                   <select value={selChildId} onChange={e => setSelChildId(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.04)', color:C.text, border:`1px solid ${C.border}`, padding:12, borderRadius:10, outline:'none' }}>
-                    <option value="">-- Choose Target Node --</option>
+                    <option value="">-- Select Student --</option>
                     {children.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
                   </select>
                 </div>
-                {activeAction === 'send'   && <Input label="Disbursement Amount (Rs.)" type="number" value={sendAmount} onChange={setSendAmount} placeholder="Value to add to dependent node balance" />}
-                {activeAction === 'limit'  && <Input label="Monthly Outflow Ceiling Cap (Rs.)" type="number" value={limitAmount} onChange={setLimitAmount} placeholder="Enter ceiling constraint threshold value" />}
+
+                {activeAction === 'send'   && <Input label="Amount to Send (Rs.)" type="number" value={sendAmount} onChange={setSendAmount} placeholder="Will be added to student's balance" />}
+                {activeAction === 'limit'  && <Input label="Monthly Spending Limit (Rs.)" type="number" value={limitAmount} onChange={setLimitAmount} placeholder="e.g. 5000" />}
                 {activeAction === 'status' && (
                   <div style={{ fontSize:13, color:C.sub, padding:14, background:'rgba(255,255,255,0.01)', borderRadius:10, border:`1px solid ${C.border}`, marginBottom:16 }}>
-                    ℹ️ Executing this packet instruction swaps the current operational state of the target student wallet between active and locked.
+                    ℹ️ This will toggle the student's wallet between active and locked.
                   </div>
                 )}
-                <Input label="Secure Secret Guardian PIN Verification" type="password" value={pin} onChange={setPin} placeholder="••••" />
+
+                <Input label="Your PIN" type="password" value={pin} onChange={setPin} placeholder="••••" />
                 <button type="submit" style={{ width:'100%', marginTop:10, ...filled(activeAction==='status' ? C.r1 : activeAction==='limit' ? C.p2 : C.c1, '13px') }}>
-                  {activeAction === 'send' ? 'Execute Sovereign Transfer' : activeAction === 'limit' ? 'Impose Ceiling Packet' : 'Toggle Operational Privilege'}
+                  {activeAction === 'send' ? 'Send Money' : activeAction === 'limit' ? 'Set Limit' : 'Toggle Lock'}
                 </button>
               </form>
             ) : (
-              <div style={{ fontSize:12, color:C.sub, fontStyle:'italic' }}>No targets available to accept instruction flags.</div>
+              <div style={{ fontSize:12, color:C.sub, fontStyle:'italic' }}>No students available.</div>
             )}
           </Card>
         </div>
@@ -1167,6 +1170,7 @@ function ParentDash({ token, user }) {
   );
 }
 
+// ─── PARENT REPORTS MODULE ────────────────────────────────────
 function ParentReports({ token }) {
   const [reports, setReports] = useState([]);
   useEffect(() => {
@@ -1176,31 +1180,31 @@ function ParentReports({ token }) {
 
   return (
     <div>
-      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Linked Account Audit Pipelines</h1>
-      <Card title="Structural Outflow Reports — Dependent Ecosystem">
+      <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Children's Spending Reports</h1>
+      <Card title="Spending Reports">
         {reports.length === 0 ? (
-          <div style={{ color:C.sub, fontStyle:'italic' }}>No transaction data blocks have compiled from matching child nodes yet.</div>
+          <div style={{ color:C.sub, fontStyle:'italic' }}>No spending data available yet.</div>
         ) : (
           reports.map(r => (
             <div key={r.childId} style={{ marginBottom:25, borderBottom:`1px solid ${C.border}`, paddingBottom:20 }}>
-              <h4 style={{ margin:'0 0 10px 0', fontSize:15, color:C.text }}>Log Tracking Stream for: {r.name}</h4>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:20 }} className="sp-grid-2">
+              <h4 style={{ margin:'0 0 10px 0', fontSize:15, color:C.text }}>Transactions for: {r.name}</h4>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:20 }}>
                 <div style={glass({ padding:14 })}>
-                  <div style={{ fontSize:11, color:C.sub }}>Gross Expenditures Vol</div>
+                  <div style={{ fontSize:11, color:C.sub }}>Total Spent</div>
                   <div style={{ fontSize:20, fontWeight:800, color:C.r1, marginTop:4 }}>Rs. {r.totalSpent?.toLocaleString() || 0}</div>
                 </div>
                 <div style={glass({ padding:14 })}>
-                  <div style={{ fontSize:11, color:C.sub }}>Active Transaction Logs Trace</div>
+                  <div style={{ fontSize:11, color:C.sub }}>Recent Transactions</div>
                   <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:8 }}>
                     {r.transactions && r.transactions.length > 0 ? (
                       r.transactions.map(t => (
                         <div key={t.id} style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
-                          <span style={{ color:C.sub }}>{t.description || 'Outflow Clearance'}</span>
+                          <span style={{ color:C.sub }}>{t.description || 'Payment'}</span>
                           <span style={{ fontWeight:700 }}>Rs. {t.amount}</span>
                         </div>
                       ))
                     ) : (
-                      <span style={{ fontStyle:'italic', color:C.sub, fontSize:11 }}>No transactional outlays logged.</span>
+                      <span style={{ fontStyle:'italic', color:C.sub, fontSize:11 }}>No transactions yet.</span>
                     )}
                   </div>
                 </div>
@@ -1213,6 +1217,7 @@ function ParentReports({ token }) {
   );
 }
 
+// ─── ATOMIC SHARED INTERFACE REUSABLE PARTS ───────────────────
 function ProgressBar({ value, max, color }) {
   const percentage = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
@@ -1235,7 +1240,7 @@ function TransactionList({ transactions }) {
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div style={{ width:38, height:38, borderRadius:10, background:'rgba(255,255,255,0.03)', display:'flex', justifyContent:'center', alignItems:'center', fontSize:16, border:`1px solid ${C.border}` }}>{matchingCat.icon}</div>
               <div>
-                <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{t.description || `${matchingCat.label} Outflow`}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{t.description || `${matchingCat.label} Payment`}</div>
                 <div style={{ fontSize:11, color:C.sub, marginTop:2 }}>{new Date(t.createdAt).toLocaleDateString()}</div>
               </div>
             </div>
@@ -1262,15 +1267,15 @@ function NotificationsBox({ token }) {
   };
 
   return (
-    <Card title="System Telemetry Alerts" action={alerts.length > 0 && <button onClick={clearAlerts} style={{ background:'none', border:'none', color:C.sub, fontSize:11, cursor:'pointer', fontWeight:600 }}>Clear Streams</button>}>
+    <Card title="Notifications" action={alerts.length > 0 && <button onClick={clearAlerts} style={{ background:'none', border:'none', color:C.sub, fontSize:11, cursor:'pointer', fontWeight:600 }}>Clear All</button>}>
       {alerts.length === 0 ? (
-        <div style={{ fontSize:12, color:C.sub, fontStyle:'italic' }}>Ecosystem runtime telemetry quiet. No active alerts flagged.</div>
+        <div style={{ fontSize:12, color:C.sub, fontStyle:'italic' }}>No notifications.</div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:10, maxHeight:200, overflowY:'auto' }}>
           {alerts.map(a => (
             <div key={a.id} style={{ background:a.type==='CRITICAL'?'rgba(239,68,68,0.06)':'rgba(245,158,11,0.06)', border:`1px solid ${a.type==='CRITICAL'?C.r1:C.a1}`, padding:10, borderRadius:10, fontSize:12 }}>
               <div style={{ fontWeight:700, color:a.type==='CRITICAL'?C.r1:C.a1, display:'flex', gap:6, alignItems:'center', marginBottom:2 }}>
-                <span>{a.type==='CRITICAL' ? '🚨 SYSTEM IMPOSING LIMIT' : '⚠️ CONSTRAINT RE-ROUTE ALERT'}</span>
+                <span>{a.type==='CRITICAL' ? '🚨 Spending Limit Reached' : '⚠️ Alert'}</span>
               </div>
               <div style={{ color:C.text, lineHeight:1.4 }}>{a.message}</div>
             </div>
