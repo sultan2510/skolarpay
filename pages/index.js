@@ -1122,11 +1122,11 @@ function ParentDash({ token, user }) {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginTop:10 }}>
                   <div>
                     <div style={{ fontSize:11, color:C.sub }}>Balance</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:C.text, marginTop:2 }}>Rs. {c.wallet?.balance || 0}</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:C.text, marginTop:2 }}>Rs. {c.balance || 0}</div>
                   </div>
                   <div>
                     <div style={{ fontSize:11, color:C.sub }}>Spending Limit</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:C.p3, marginTop:2 }}>{c.wallet?.spendingLimit ? `Rs. ${c.wallet.spendingLimit}` : 'None Set'}</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:C.p3, marginTop:2 }}>{c.monthly_limit ? `Rs. ${c.monthly_limit}` : 'None Set'}</div>
                   </div>
                   <div>
                     <div style={{ fontSize:11, color:C.sub }}>Spent This Month</div>
