@@ -6,11 +6,19 @@ import { validatePhone, validateCNIC, genAccNum } from '../../../lib/auth';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { name, phone, cnic, pin, role, university, degree, parent_phone } = req.body;
+  let { name, phone, cnic, pin, role, university, degree, parent_phone } = req.body;
 
   if (!name?.trim())          return res.status(400).json({ error: 'Name is required' });
   if (!validatePhone(phone))  return res.status(400).json({ error: 'Invalid phone number (03XXXXXXXXX)' });
-  if (!validateCNIC(cnic))    return res.status(400).json({ error: 'Invalid CNIC (XXXXX-XXXXXXX-X)' });
+  
+  // 🛠️ FIX: If frontend doesn't provide a CNIC, automatically generate a unique fallback string
+  // to prevent validation crash while keeping database constraint unique.
+  if (!cnic || !cnic.trim()) {
+    cnic = `TEMP-${phone}`; 
+  } else if (!validateCNIC(cnic)) {
+    return res.status(400).json({ error: 'Invalid CNIC (XXXXX-XXXXXXX-X)' });
+  }
+
   if (!['student','parent'].includes(role)) return res.status(400).json({ error: 'Role must be student or parent' });
   if (!/^\d{4}$/.test(pin))  return res.status(400).json({ error: 'PIN must be exactly 4 digits' });
 

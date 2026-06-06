@@ -127,14 +127,28 @@ function Alert({ text, type='warn' }) {
   );
 }
 
+// ─── NAV BUTTON (moved outside MainApp so it's always reachable) ──
+function NavBtn({ active, icon, label, onClick }) {
+  return (
+    <div onClick={onClick} style={{
+      display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, cursor:'pointer', marginBottom:6, fontSize:14, fontWeight:active?700:500,
+      background: active ? 'rgba(91,79,232,0.15)' : 'transparent',
+      color: active ? C.pl : C.sub,
+      transition: 'all 0.2s'
+    }}>
+      <span style={{ fontSize:16 }}>{icon}</span>
+      {label}
+    </div>
+  );
+}
+
 // ─── MAIN CONTAINER ──────────────────────────────────────────
 export default function MainApp() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState('dashboard'); // p_dash, wallet, pay, budget, goals, analytics, reports, profile
+  const [screen, setScreen] = useState('dashboard');
 
-  // Trigger login check on mount
   useEffect(() => {
     const t = localStorage.getItem('sp_token');
     if (t) {
@@ -151,7 +165,7 @@ export default function MainApp() {
       const data = await res.json();
       if (data.user) {
         setUser(data.user);
-        if(data.user.role === 'parent') setScreen('p_dash');
+        if (data.user.role === 'parent') setScreen('p_dash');
       } else {
         logout();
       }
@@ -167,6 +181,28 @@ export default function MainApp() {
     setToken(null);
     setUser(null);
     setScreen('dashboard');
+  };
+
+  const renderScreen = () => {
+    if (user.role === 'parent') {
+      switch (screen) {
+        case 'p_dash':    return <ParentDash token={token} user={user} />;
+        case 'p_reports': return <ParentReports token={token} />;
+        case 'profile':   return <ProfileScreen user={user} token={token} onUpdate={fetchProfile} />;
+        default:          return <ParentDash token={token} user={user} />;
+      }
+    }
+    switch (screen) {
+      case 'dashboard': return <DashboardHome token={token} user={user} setScreen={setScreen} />;
+      case 'wallet':    return <WalletScreen token={token} />;
+      case 'pay':       return <PayScreen token={token} />;
+      case 'budget':    return <BudgetScreen token={token} />;
+      case 'goals':     return <GoalsScreen token={token} />;
+      case 'analytics': return <AnalyticsScreen token={token} />;
+      case 'reports':   return <ReportsScreen token={token} />;
+      case 'profile':   return <ProfileScreen user={user} token={token} onUpdate={fetchProfile} />;
+      default:          return <DashboardHome token={token} user={user} setScreen={setScreen} />;
+    }
   };
 
   if (loading) {
@@ -186,95 +222,73 @@ export default function MainApp() {
 
   return (
     <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif', display:'flex' }}>
-      {/* SIDEBAR NAVIGATION */}
+
+      {/* ── SIDEBAR NAVIGATION ── */}
       <div style={{ width:260, background:C.mid, borderRight:`1px solid ${C.border}`, padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+
+        {/* Top nav links */}
         <div>
           <div style={{ fontSize:22, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:35, paddingLeft:10 }}>SkolarPay</div>
-          
+
           <div style={{ color:C.sub, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, paddingLeft:10, marginBottom:12 }}>Workspace</div>
-          
-          {user.role === 'parent' ? (
+
+          {user?.role === 'parent' ? (
             <>
-              <NavBtn active={screen==='p_dash'} icon="👨‍👩‍👦" label="Parent Dashboard" onClick={() => setScreen('p_dash')} />
-              <NavBtn active={screen==='p_reports'} icon="📈" label="Spending Reports" onClick={() => setScreen('p_reports')} />
+              <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => setScreen('p_dash')} />
+              <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => setScreen('p_reports')} />
             </>
           ) : (
             <>
-              <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview" onClick={() => setScreen('dashboard')} />
-              <NavBtn active={screen==='wallet'} icon="💳" label="Digital Wallet" onClick={() => setScreen('wallet')} />
-              <NavBtn active={screen==='pay'} icon="⚡" label="Bills & Topup" onClick={() => setScreen('pay')} />
-              <NavBtn active={screen==='budget'} icon="📅" label="Semester Budget" onClick={() => setScreen('budget')} />
-              <NavBtn active={screen==='goals'} icon="🎯" label="Savings Goals" onClick={() => setScreen('goals')} />
-              <NavBtn active={screen==='analytics'} icon="📊" label="Analytics" onClick={() => setScreen('analytics')} />
-              <NavBtn active={screen==='reports'} icon="📝" label="Statements" onClick={() => setScreen('reports')} />
+              <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => setScreen('dashboard')} />
+              <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => setScreen('wallet')} />
+              <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => setScreen('pay')} />
+              <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => setScreen('budget')} />
+              <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => setScreen('goals')} />
+              <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => setScreen('analytics')} />
+              <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => setScreen('reports')} />
             </>
           )}
           <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => setScreen('profile')} />
         </div>
 
-        {/* USER TAG AT BOTTOM */}
+        {/* ── USER TAG AT BOTTOM ── */}
         <div style={glass({ padding:14, display:'flex', alignItems:'center', justifyContent:'space-between' })}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:user.role==='parent'?C.c1:C.p1, display:'flex', justifyContent:'center', alignItems:'center', fontWeight:700, fontSize:13 }}>
-              {user.name[0].toUpperCase()}
+            {/* Avatar Bubble */}
+            <div style={{ width:34, height:34, borderRadius:10, background: user?.role==='parent' ? C.c1 : C.p1, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>
+              {user?.name ? user.name[0].toUpperCase() : 'U'}
             </div>
+            {/* User Name & Role */}
             <div>
-              <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.name}</div>
-              <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>{user.role} account</div>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {user?.name || 'Guest'}
+              </div>
+              <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>
+                {user?.role ? `${user.role} account` : 'Logged Out'}
+              </div>
             </div>
           </div>
-          <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>🚪</button>
+          {/* Logout Button */}
+          <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>
+            🚪
+          </button>
         </div>
-      </div>
 
-      {/* MAIN DATA VIEW AREA */}
+      </div>{/* end sidebar */}
+
+      {/* ── MAIN DATA VIEW AREA ── */}
       <div style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
         {renderScreen()}
       </div>
+
     </div>
   );
-
-  function NavBtn({ active, icon, label, onClick }) {
-    return (
-      <div onClick={onClick} style={{
-        display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, cursor:'pointer', marginBottom:6, fontSize:14, fontWeight:active?700:500,
-        background: active ? 'rgba(91,79,232,0.15)' : 'transparent',
-        color: active ? C.pl : C.sub,
-        transition: 'all 0.2s'
-      }}>
-        <span style={{ fontSize:16 }}>{icon}</span>
-        {label}
-      </div>
-    );
-  }
-
-  function renderScreen() {
-    if (user.role === 'parent') {
-      switch(screen) {
-        case 'p_dash':     return <ParentDash token={token} user={user} />;
-        case 'p_reports':  return <ParentReports token={token} /> ;
-        case 'profile':   return <ProfileScreen user={user} token={token} onUpdate={fetchProfile} />;
-        default:           return <ParentDash token={token} user={user} />;
-      }
-    }
-    switch(screen) {
-      case 'dashboard': return <DashboardHome token={token} user={user} setScreen={setScreen} />;
-      case 'wallet':    return <WalletScreen token={token} />;
-      case 'pay':       return <PayScreen token={token} />;
-      case 'budget':    return <BudgetScreen token={token} />;
-      case 'goals':     return <GoalsScreen token={token} />;
-      case 'analytics': return <AnalyticsScreen token={token} />;
-      case 'reports':   return <ReportsScreen token={token} />;
-      case 'profile':   return <ProfileScreen user={user} token={token} onUpdate={fetchProfile} />;
-      default:          return <DashboardHome token={token} user={user} setScreen={setScreen} />;
-    }
-  }
 }
 
 // ─── AUTHENTICATION MODULE ───────────────────────────────────
 function AuthScreen({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);
-  const [role, setRole] = useState('student'); // student, parent
+  const [role, setRole] = useState('student');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
@@ -285,10 +299,12 @@ function AuthScreen({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr(''); setMsg('');
-    if(!phone || !pin || (isRegister && !name)) { setErr('Fill out all core fields.'); return; }
-    
+    if (!phone || !pin || (isRegister && !name)) { setErr('Fill out all core fields.'); return; }
+
     const url = isRegister ? '/api/auth/register' : '/api/auth/login';
-    const body = isRegister ? { role, name, phone, pin, parent_phone: role==='student'?parentPhone:undefined } : { phone, pin };
+    const body = isRegister
+      ? { role, name, phone, pin, parent_phone: role==='student' ? parentPhone : undefined }
+      : { phone, pin };
 
     try {
       const res = await fetch(url, {
@@ -298,7 +314,7 @@ function AuthScreen({ onLogin }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Server rejected request');
-      
+
       if (isRegister) {
         setMsg('Account provisioned successfully. Proceeding to login.');
         setIsRegister(false);
@@ -306,7 +322,7 @@ function AuthScreen({ onLogin }) {
         localStorage.setItem('sp_token', data.token);
         onLogin(data.token);
       }
-    } catch(e) {
+    } catch (e) {
       setErr(e.message);
     }
   };
@@ -332,8 +348,8 @@ function AuthScreen({ onLogin }) {
             <div style={{ marginBottom:16 }}>
               <label style={{ fontSize:11, fontWeight:700, color:C.sub, textTransform:'uppercase', letterSpacing:1, display:'block', marginBottom:8 }}>System Actor Role</label>
               <div style={{ display:'flex', gap:10 }}>
-                <button type="button" onClick={() => setRole('student')} style={{ flex:1, ... (role==='student'?filled(C.p1,'10px'):ghost(C.sub,'10px')), fontSize:13 }}>Student</button>
-                <button type="button" onClick={() => setRole('parent')} style={{ flex:1, ... (role==='parent'?filled(C.c1,'10px'):ghost(C.sub,'10px')), fontSize:13 }}>Parent / Guardian</button>
+                <button type="button" onClick={() => setRole('student')} style={{ flex:1, ...(role==='student' ? filled(C.p1,'10px') : ghost(C.sub,'10px')), fontSize:13 }}>Student</button>
+                <button type="button" onClick={() => setRole('parent')} style={{ flex:1, ...(role==='parent' ? filled(C.c1,'10px') : ghost(C.sub,'10px')), fontSize:13 }}>Parent / Guardian</button>
               </div>
             </div>
           )}
@@ -341,12 +357,12 @@ function AuthScreen({ onLogin }) {
           {isRegister && <Input label="Full Identity Name" value={name} onChange={setName} placeholder="e.g., Sultan Ahmed" />}
           <Input label="Mobile Phone Identifier" value={phone} onChange={setPhone} placeholder="e.g., 03001112223" />
           <Input label="Secure Secret PIN (4-Digits)" type="password" value={pin} onChange={setPin} placeholder="••••" />
-          
+
           {isRegister && role === 'student' && (
             <Input label="Associated Parent Phone Identifier" value={parentPhone} onChange={setParentPhone} placeholder="e.g., 03009998887" />
           )}
 
-          <button type="submit" style={{ width:'100%', marginTop:10, ...filled(role==='parent'?C.c1:C.p1, '14px') }}>
+          <button type="submit" style={{ width:'100%', marginTop:10, ...filled(role==='parent' ? C.c1 : C.p1, '14px') }}>
             {isRegister ? 'Execute Registration' : 'Authenticate Session'}
           </button>
         </form>
@@ -363,7 +379,7 @@ function DashboardHome({ token, user, setScreen }) {
       .then(r => r.json()).then(setData);
   }, [token]);
 
-  if(!data) return <div style={{ color:C.sub }}>Fetching ledger snapshot...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Fetching ledger snapshot...</div>;
 
   return (
     <div>
@@ -379,7 +395,6 @@ function DashboardHome({ token, user, setScreen }) {
 
       <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }}>
         <div>
-          {/* BALANCE DISPLAY HEADER */}
           <Card style={{ background:`linear-gradient(135deg, rgba(91,79,232,0.2), rgba(15,14,26,0.5))`, border:`1px solid rgba(91,79,232,0.3)`, padding:30 }}>
             <div style={{ color:C.sub, fontSize:14, fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}>Available Escrow Liquidity</div>
             <div style={{ fontSize:42, fontWeight:900, marginTop:10, color:C.text }}>Rs. {data.balance.toLocaleString()}.00</div>
@@ -389,7 +404,6 @@ function DashboardHome({ token, user, setScreen }) {
             </div>
           </Card>
 
-          {/* QUICK LINKS GRID */}
           <h3 style={{ fontSize:16, fontWeight:700, marginBottom:16 }}>Fiduciary Accelerators</h3>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
             <QuickLink icon="📱" label="Mobile Recharge" sub="Instant network topup" onClick={() => setScreen('pay')} />
@@ -397,19 +411,17 @@ function DashboardHome({ token, user, setScreen }) {
             <QuickLink icon="🎯" label="Savings System" sub="Fund strategic goals" onClick={() => setScreen('goals')} />
           </div>
 
-          {/* TRANSACTION SUBSET */}
           <Card title="Recent Ledger Clearances" action={<button onClick={() => setScreen('wallet')} style={{ background:'none', border:'none', color:C.p2, fontWeight:600, cursor:'pointer' }}>View All History</button>}>
             <TransactionList transactions={data.recentTransactions} />
           </Card>
         </div>
 
         <div>
-          {/* STATUS WIDGET: SPENDING LIMIT */}
           <Card title="Monthly Spending Limit">
             <div style={{ fontSize:22, fontWeight:800, color:C.text, marginBottom:6 }}>
-              Rs. {data.spentThisMonth.toLocaleString()} <span style={{ fontSize:14, color:C.sub, fontWeight:500 }}>spent</span>
+              Rs. {(data?.spentThisMonth ?? 0).toLocaleString()} <span style={{ fontSize:14, color:C.sub, fontWeight:500 }}>spent</span>
             </div>
-            {data.spendingLimit ? (
+            {data?.spendingLimit ? (
               <>
                 <div style={{ fontSize:12, color:C.sub, marginBottom:10 }}>Ceiling Threshold: Rs. {data.spendingLimit.toLocaleString()}</div>
                 <ProgressBar value={data.spentThisMonth} max={data.spendingLimit} color={data.spentThisMonth > data.spendingLimit ? C.r1 : C.p1} />
@@ -420,7 +432,6 @@ function DashboardHome({ token, user, setScreen }) {
             )}
           </Card>
 
-          {/* SYSTEM MESSAGES / NOTIFICATIONS */}
           <NotificationsBox token={token} />
         </div>
       </div>
@@ -430,7 +441,7 @@ function DashboardHome({ token, user, setScreen }) {
 
 function QuickLink({ icon, label, sub, onClick }) {
   return (
-    <div onClick={onClick} style={glass({ padding:16, cursor:'pointer', transition:'transform 0.2s', ':hover':{ transform:'translateY(-2px)' } })}>
+    <div onClick={onClick} style={glass({ padding:16, cursor:'pointer', transition:'transform 0.2s' })}>
       <div style={{ fontSize:24, marginBottom:8 }}>{icon}</div>
       <div style={{ fontSize:14, fontWeight:700, color:C.text }}>{label}</div>
       <div style={{ fontSize:11, color:C.sub, marginTop:2 }}>{sub}</div>
@@ -451,7 +462,7 @@ function WalletScreen({ token }) {
 
   const refreshWallet = useCallback(() => {
     let url = '/api/wallet/transactions';
-    if(catFilter !== 'all') url += `?category=${catFilter}`;
+    if (catFilter !== 'all') url += `?category=${catFilter}`;
     fetch(url, { headers:{ 'Authorization': `Bearer ${token}` } })
       .then(r => r.json()).then(setData);
   }, [token, catFilter]);
@@ -463,25 +474,24 @@ function WalletScreen({ token }) {
     setErr(''); setSuccess('');
     try {
       const res = await fetch('/api/transfer/internal', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ dest_phone:destPhone, amount:parseFloat(amount), pin, description:desc })
       });
       const resData = await res.json();
-      if(!res.ok) throw new Error(resData.error || 'Transfer failed');
+      if (!res.ok) throw new Error(resData.error || 'Transfer failed');
       setSuccess(`Cleared! Transaction hash ID: ${resData.transactionId}`);
       setDestPhone(''); setAmount(''); setPin(''); setDesc('');
       refreshWallet();
-    } catch(e) { setErr(e.message); }
+    } catch (e) { setErr(e.message); }
   };
 
-  if(!data) return <div style={{ color:C.sub }}>Compiling secure balance matrices...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Compiling secure balance matrices...</div>;
 
   return (
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Digital Wallet Ledger</h1>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
-        {/* PEER TO PEER DISPATCHER */}
         <div>
           <Card title="Execute Peer Trust Transfer">
             <Alert text={err} type="error" />
@@ -496,11 +506,10 @@ function WalletScreen({ token }) {
           </Card>
         </div>
 
-        {/* BANK DEPOSIT / HISTORY OVERVIEW */}
         <div>
           <Card style={{ background:`linear-gradient(135deg, rgba(6,182,212,0.15), transparent)`, border:`1px solid rgba(6,182,212,0.2)` }}>
             <div style={{ color:C.sub, fontSize:13, fontWeight:600 }}>Total Cumulative Liquidity</div>
-            <div style={{ fontSize:32, fontWeight:900, marginTop:6 }}>Rs. {data.balance.toLocaleString()}.00</div>
+            <div style={{ fontSize:32, fontWeight:900, marginTop:6 }}>Rs. {(data?.balance ?? 0).toLocaleString()}.00</div>
           </Card>
 
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:24, marginBottom:12 }}>
@@ -522,7 +531,7 @@ function WalletScreen({ token }) {
 
 // ─── BILL PAYMENTS & RECHARGE MODULE ─────────────────────────
 function PayScreen({ token }) {
-  const [activeTab, setActiveTab] = useState('recharge'); // recharge, bill
+  const [activeTab, setActiveTab] = useState('recharge');
   const [mobile, setMobile] = useState('');
   const [selNet, setSelNet] = useState(null);
   const [selBill, setSelBill] = useState(null);
@@ -540,34 +549,34 @@ function PayScreen({ token }) {
     e.preventDefault();
     setErr(''); setSuccess('');
     const url = activeTab === 'recharge' ? '/api/topup/recharge' : '/api/bills/pay';
-    const body = activeTab === 'recharge' 
+    const body = activeTab === 'recharge'
       ? { mobile, network: selNet?.id, amount: parseFloat(amount), pin }
       : { provider: selBill?.id, consumer_number: consumerNum, amount: parseFloat(amount), pin };
 
     try {
       const res = await fetch(url, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: JSON.stringify(body)
       });
       const data = await res.json();
-      if(!res.ok) throw new Error(data.error || 'Payment transaction rejected');
+      if (!res.ok) throw new Error(data.error || 'Payment transaction rejected');
       setSuccess(`Transaction authorized successfully! Clearance Ref: ${data.transactionId}`);
-      if(activeTab==='recharge') { setMobile(''); setAmount(''); } else { setConsumerNum(''); setAmount(''); }
+      if (activeTab === 'recharge') { setMobile(''); setAmount(''); } else { setConsumerNum(''); setAmount(''); }
       setPin('');
-    } catch(e) { setErr(e.message); }
+    } catch (e) { setErr(e.message); }
   };
 
   return (
     <div style={{ maxWidth:650, margin:'0 auto' }}>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Micro-Utility Clearinghouse</h1>
-      
+
       <div style={{ display:'flex', background:'rgba(255,255,255,0.03)', borderRadius:12, padding:4, marginBottom:24 }}>
         <button onClick={() => { setActiveTab('recharge'); resetForm(); }} style={{ flex:1, padding:'12px', borderRadius:10, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', background: activeTab==='recharge'?C.card:'transparent', color: activeTab==='recharge'?C.text:C.sub }}>📱 Mobile Airtime Recharge</button>
         <button onClick={() => { setActiveTab('bill'); resetForm(); }} style={{ flex:1, padding:'12px', borderRadius:10, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', background: activeTab==='bill'?C.card:'transparent', color: activeTab==='bill'?C.text:C.sub }}>⚡ Utility Bill Settlement</button>
       </div>
 
-      <Card title={activeTab==='recharge'?'Mobile Network Topup Protocol':'Institutional Utility Ledger'}>
+      <Card title={activeTab==='recharge' ? 'Mobile Network Topup Protocol' : 'Institutional Utility Ledger'}>
         <Alert text={err} type="error" />
         <Alert text={success} type="success" />
 
@@ -579,7 +588,7 @@ function PayScreen({ token }) {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8 }}>
                   {NETS.map(n => (
                     <div key={n.id} onClick={() => setSelNet(n)}
-                         style={{ ...glass({ padding:'12px 8px' }), textAlign:'center', cursor:'pointer', transition:'all 0.2s', border: selNet?.id===n.id?`2px solid ${C.p1}`:`1px solid ${C.border}` }}>
+                         style={{ ...glass({ padding:'12px 8px' }), textAlign:'center', cursor:'pointer', transition:'all 0.2s', border: selNet?.id===n.id ? `2px solid ${C.p1}` : `1px solid ${C.border}` }}>
                       <div style={{ fontSize:20, marginBottom:4 }}>{n.emoji}</div>
                       <div style={{ fontSize:11, fontWeight:700, color:C.text }}>{n.name}</div>
                     </div>
@@ -595,7 +604,7 @@ function PayScreen({ token }) {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:10 }}>
                   {BILLS.map(b => (
                     <div key={b.id} onClick={() => setSelBill(b)}
-                         style={{ ...glass({ padding:'13px' }), display:'flex', alignItems:'center', gap:12, cursor:'pointer', transition:'all 0.2s', border: selBill?.id===b.id?`2px solid ${C.p1}`:`1px solid ${C.border}` }}>
+                         style={{ ...glass({ padding:'13px' }), display:'flex', alignItems:'center', gap:12, cursor:'pointer', transition:'all 0.2s', border: selBill?.id===b.id ? `2px solid ${C.p1}` : `1px solid ${C.border}` }}>
                       <div style={{ width:40, height:40, borderRadius:12, background:'rgba(91,79,232,0.15)', display:'flex', justifyContent:'center', alignItems:'center', fontSize:18 }}>{b.icon}</div>
                       <div style={{ flex:1 }}><div style={{ fontWeight:700, fontSize:13, color:C.text }}>{b.label}</div></div>
                       {selBill?.id===b.id && <span style={{ color:C.p1 }}>✓</span>}
@@ -610,7 +619,7 @@ function PayScreen({ token }) {
           <Input label="Settlement Amount (Rs.)" type="number" value={amount} onChange={setAmount} placeholder="Enter clearing value" />
           <Input label="Secure Secret PIN Validation" type="password" value={pin} onChange={setPin} placeholder="••••" />
 
-          <button type="submit" style={{ width:'100%', marginTop:10, ...filled(activeTab==='bill'?C.c1:C.p1, '14px') }}>
+          <button type="submit" style={{ width:'100%', marginTop:10, ...filled(activeTab==='bill' ? C.c1 : C.p1, '14px') }}>
             Authorize Escrow Discharge
           </button>
         </form>
@@ -629,7 +638,7 @@ function BudgetScreen({ token }) {
 
   const fetchBudget = useCallback(() => {
     fetch('/api/budget/semester', { headers:{ 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if(d.plan) setPlan(d.plan); });
+      .then(r => r.json()).then(d => { if (d.plan) setPlan(d.plan); });
   }, [token]);
 
   useEffect(() => { fetchBudget(); }, [fetchBudget]);
@@ -639,26 +648,26 @@ function BudgetScreen({ token }) {
     setErr('');
     try {
       const res = await fetch('/api/budget/semester', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: JSON.stringify({ title, total_allowance: parseFloat(totalAllowance), duration_months: parseInt(months) })
       });
       const data = await res.json();
-      if(!res.ok) throw new Error(data.error || 'Failed to create budget structure');
+      if (!res.ok) throw new Error(data.error || 'Failed to create budget structure');
       fetchBudget();
-    } catch(e) { setErr(e.message); }
+    } catch (e) { setErr(e.message); }
   };
 
   return (
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Semester Fiscal Budget Architect</h1>
-      
+
       {plan ? (
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
           <Card title={`Active Configuration: ${plan.title}`}>
             <div style={{ color:C.sub, fontSize:13 }}>Total Allotted Term Capital</div>
             <div style={{ fontSize:28, fontWeight:800, color:C.text, marginTop:4, marginBottom:20 }}>Rs. {plan.totalAllowance.toLocaleString()}</div>
-            
+
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
               <div style={glass({ padding:14 })}>
                 <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Monthly Cap Ceiling</div>
@@ -680,7 +689,7 @@ function BudgetScreen({ token }) {
 
           <Card title="Pace Velocity Metrics">
             <div style={{ fontSize:14, lineHeight:'1.6', color:C.text }}>
-              Your current spending vector is operating inside standard limits. 
+              Your current spending vector is operating inside standard limits.
               Keep weekly outlays underneath <strong style={{ color:C.c1 }}>Rs. {plan.weeklyLimit}</strong> to shield term endowments from premature exhaustion.
             </div>
             <div style={{ marginTop:24, background:'rgba(255,255,255,0.02)', padding:16, borderRadius:12, border:`1px solid ${C.border}` }}>
@@ -720,7 +729,7 @@ function GoalsScreen({ token }) {
 
   const fetchGoals = useCallback(() => {
     fetch('/api/savings/goals', { headers:{ 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if(d.goals) setGoals(d.goals); });
+      .then(r => r.json()).then(d => { if (d.goals) setGoals(d.goals); });
   }, [token]);
 
   useEffect(() => { fetchGoals(); }, [fetchGoals]);
@@ -730,34 +739,34 @@ function GoalsScreen({ token }) {
     setErr(''); setSuccess('');
     try {
       const res = await fetch('/api/savings/goals', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: JSON.stringify({ title, target_amount: parseFloat(target), type })
       });
       const data = await res.json();
-      if(!res.ok) throw new Error(data.error || 'Goal provision rejected');
+      if (!res.ok) throw new Error(data.error || 'Goal provision rejected');
       setSuccess(`Goal node "${title}" instantiated.`);
       setTitle(''); setTarget('');
       fetchGoals();
-    } catch(e) { setErr(e.message); }
+    } catch (e) { setErr(e.message); }
   };
 
   const handleContribute = async (e) => {
     e.preventDefault();
     setErr(''); setSuccess('');
-    if(!selGoalId) { setErr('Select a target node.'); return; }
+    if (!selGoalId) { setErr('Select a target node.'); return; }
     try {
       const res = await fetch('/api/savings/contribute', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: JSON.stringify({ goal_id: selGoalId, amount: parseFloat(contribAmount), pin })
       });
       const data = await res.json();
-      if(!res.ok) throw new Error(data.error || 'Contribution matrix clearance failure');
+      if (!res.ok) throw new Error(data.error || 'Contribution matrix clearance failure');
       setSuccess(`Transferred Rs. ${contribAmount} to active vault allocation.`);
       setContribAmount(''); setPin('');
       fetchGoals();
-    } catch(e) { setErr(e.message); }
+    } catch (e) { setErr(e.message); }
   };
 
   return (
@@ -767,7 +776,6 @@ function GoalsScreen({ token }) {
       <Alert text={success} type="success" />
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
-        {/* GOALS PROVISIONING MATRIX */}
         <div>
           <Card title="Instantiate Vault Goal Objective">
             <form onSubmit={handleCreate}>
@@ -787,7 +795,6 @@ function GoalsScreen({ token }) {
             </form>
           </Card>
 
-          {/* ASSET ALLOCATION PROTOCOL */}
           {goals.length > 0 && (
             <Card title="Execute Trust Vault Capitalization" style={{ marginTop:20 }}>
               <form onSubmit={handleContribute}>
@@ -806,7 +813,6 @@ function GoalsScreen({ token }) {
           )}
         </div>
 
-        {/* ACTIVE GOALS PERFORMANCE LIST */}
         <div>
           <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Sinking Vault Matrix Pipelines</h3>
           {goals.length === 0 ? (
@@ -839,7 +845,7 @@ function AnalyticsScreen({ token }) {
       .then(r => r.json()).then(setData);
   }, [token]);
 
-  if(!data) return <div style={{ color:C.sub }}>Synthesizing category expense data pipelines...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Synthesizing category expense data pipelines...</div>;
 
   return (
     <div>
@@ -864,7 +870,7 @@ function AnalyticsScreen({ token }) {
               })}
             </div>
           ) : (
-            <div style={{ color:C.sub, fontStyle:'italic' }}>No vector allocations discovered in structural history logs. Outlays display blank.</div>
+            <div style={{ color:C.sub, fontStyle:'italic' }}>No vector allocations discovered in structural history logs.</div>
           )}
         </Card>
 
@@ -880,7 +886,7 @@ function AnalyticsScreen({ token }) {
             </div>
           </div>
           <div style={{ padding:16, background:'rgba(255,255,255,0.02)', borderRadius:12, border:`1px solid ${C.border}`, fontSize:13, color:C.sub, lineHeight:1.6 }}>
-            📊 Macro analytics parse real-time categorizations derived directly from transactional strings. This isolates velocity deviations before constraints break.
+            📊 Macro analytics parse real-time categorizations derived directly from transactional strings.
           </div>
         </Card>
       </div>
@@ -898,7 +904,7 @@ function ReportsScreen({ token }) {
       .then(r => r.json()).then(setData);
   }, [token, days]);
 
-  if(!data) return <div style={{ color:C.sub }}>Exporting fiscal transaction logs...</div>;
+  if (!data) return <div style={{ color:C.sub }}>Exporting fiscal transaction logs...</div>;
 
   return (
     <div style={{ maxWidth:800, margin:'0 auto' }}>
@@ -966,26 +972,26 @@ function ProfileScreen({ user, token, onUpdate }) {
   const handlePinChange = async (e) => {
     e.preventDefault();
     setErr(''); setSuccess('');
-    if(newPin.length !== 4 || isNaN(newPin)) { setErr('New security PIN must be exactly 4 digits.'); return; }
-    
+    if (newPin.length !== 4 || isNaN(newPin)) { setErr('New security PIN must be exactly 4 digits.'); return; }
+
     try {
-      const res = await fetch('/api/parent/children', { // sharing same backend update pipeline
-        method:'PATCH',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+      const res = await fetch('/api/parent/children', {
+        method: 'PATCH',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: JSON.stringify({ current_pin: currentPin, new_pin: newPin, action:'UPDATE_PIN' })
       });
       const data = await res.json();
-      if(!res.ok) throw new Error(data.error || 'Authentication credential block modification rejected');
+      if (!res.ok) throw new Error(data.error || 'Authentication credential block modification rejected');
       setSuccess('Vault authorization credentials successfully updated.');
       setCurrentPin(''); setNewPin('');
-      if(onUpdate) onUpdate(token);
-    } catch(e) { setErr(e.message); }
+      if (onUpdate) onUpdate(token);
+    } catch (e) { setErr(e.message); }
   };
 
   return (
     <div style={{ maxWidth:500, margin:'0 auto' }}>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Account Node Security Settings</h1>
-      
+
       <Card title="Node Credentials Profile">
         <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24, background:'rgba(255,255,255,0.02)', padding:16, borderRadius:12 }}>
           <div style={{ fontSize:13 }}><span style={{ color:C.sub }}>Actor Identity name:</span> <strong style={{ color:C.text }}>{user.name}</strong></div>
@@ -1016,11 +1022,11 @@ function ParentDash({ token, user }) {
   const [pin, setPin] = useState('');
   const [err, setErr] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeAction, setActiveAction] = useState('send'); // send, limit, status
+  const [activeAction, setActiveAction] = useState('send');
 
   const fetchChildren = useCallback(() => {
     fetch('/api/parent/children', { headers:{ 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if(d.children) setChildren(d.children); });
+      .then(r => r.json()).then(d => { if (d.children) setChildren(d.children); });
   }, [token]);
 
   useEffect(() => { fetchChildren(); }, [fetchChildren]);
@@ -1028,50 +1034,79 @@ function ParentDash({ token, user }) {
   const handleActionSubmit = async (e) => {
     e.preventDefault();
     setErr(''); setSuccess('');
-    if(!selGoalId) { /* keeping structural signature compatibility with older stubs */ }
-    if(!selChildId) { setErr('Select an active student dependent node.'); return; }
 
-    let payload = { child_id: selChildId, pin, action:'' };
-    if(activeAction === 'send') {
-      payload.action = 'SEND_POCKET_MONEY';
-      payload.amount = parseFloat(sendAmount);
-    } else if(activeAction === 'limit') {
-      payload.action = 'SET_SPENDING_LIMIT';
-      payload.amount = parseFloat(limitAmount);
-    } else if(activeAction === 'status') {
-      payload.action = 'TOGGLE_BLOCK_STATUS';
+    // Validate required fields before building payload
+    if (!selChildId) { setErr('Select a student to perform an action on.'); return; }
+    if (!pin)        { setErr('Enter your guardian PIN to authorise.'); return; }
+
+    let payload = { child_id: selChildId, pin };
+
+    // Determine action from current tab — default to 'send' if state is unexpected
+    const currentAction = ['send','limit','status'].includes(activeAction) ? activeAction : 'send';
+
+    if (currentAction === 'send') {
+      const amt = parseFloat(sendAmount);
+      if (!sendAmount || isNaN(amt) || amt <= 0) { setErr('Enter a valid amount to send.'); return; }
+      payload.action = 'send_pocket_money';
+      payload.amount = amt;
+    } else if (currentAction === 'limit') {
+      const lmt = parseFloat(limitAmount);
+      if (!limitAmount || isNaN(lmt) || lmt < 0) { setErr('Enter a valid spending limit (0 or more).'); return; }
+      payload.action = 'set_spending_limit';
+      payload.amount = lmt;
+    } else if (currentAction === 'status') {
+      payload.action = 'toggle_block_status';
     }
 
     try {
       const res = await fetch('/api/parent/children', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: JSON.stringify(payload)
       });
       const resData = await res.json();
-      if(!res.ok) throw new Error(resData.error || 'Fiduciary constraint command rejected');
+      if (!res.ok) throw new Error(resData.error || 'Fiduciary constraint command rejected');
       setSuccess('Instruction packet validated and synced to student database block.');
       setSendAmount(''); setLimitAmount(''); setPin('');
       fetchChildren();
+    } catch (e) { setErr(e.message); }
+  };
+
+  const addDummyBalance = async () => {
+    setErr(''); setSuccess('');
+    try {
+      const res = await fetch('/api/dev/topup', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body: JSON.stringify({ amount: 20000 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setSuccess(`✅ ${data.message} — New balance: Rs.${data.new_balance.toLocaleString()}`);
     } catch(e) { setErr(e.message); }
   };
 
   return (
     <div>
-      <div style={{ marginBottom:35 }}>
-        <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Guardian Command Console</h1>
-        <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Authority Entity: {user.name}</div>
+      <div style={{ marginBottom:35, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+        <div>
+          <h1 style={{ margin:0, fontSize:28, fontWeight:800 }}>Guardian Command Console</h1>
+          <div style={{ color:C.sub, fontSize:14, marginTop:4 }}>Authority Entity: {user.name}</div>
+        </div>
+        <button onClick={addDummyBalance}
+          style={{ ...filled(C.g1, '10px 18px'), fontSize:13, whiteSpace:'nowrap' }}>
+          💰 Add Rs.20,000 Test Funds
+        </button>
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24 }}>
-        {/* DEPENDENT NODES STATUS LIST */}
         <div>
           <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 16px 0' }}>Linked Student Dependent Pipelines</h3>
           {children.length === 0 ? (
             <div style={{ color:C.sub, fontStyle:'italic' }}>No student accounts are currently linked with your parent line number identifier.</div>
           ) : (
             children.map(c => (
-              <Card key={c.id} title={c.name} action={<span style={{ fontSize:11, fontWeight:700, color:c.isBlocked?C.r1:C.g1, background:c.isBlocked?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{c.isBlocked?'SPENDING LOCKED':'OPERATIONAL'}</span>}>
+              <Card key={c.id} title={c.name} action={<span style={{ fontSize:11, fontWeight:700, color:c.isBlocked?C.r1:C.g1, background:c.isBlocked?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)', padding:'4px 10px', borderRadius:12 }}>{c.isBlocked ? 'SPENDING LOCKED' : 'OPERATIONAL'}</span>}>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginTop:10 }}>
                   <div>
                     <div style={{ fontSize:11, color:C.sub }}>Escrow Liquid Balance</div>
@@ -1091,13 +1126,12 @@ function ParentDash({ token, user }) {
           )}
         </div>
 
-        {/* CONSTRAINT OVERRIDE CONTROL CENTER */}
         <div>
           <Card title="Fiduciary Directive Controls">
             <div style={{ display:'flex', gap:6, background:'rgba(255,255,255,0.02)', padding:4, borderRadius:10, marginBottom:20 }}>
-              <button type="button" onClick={() => setActiveAction('send')} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='send'?C.card:'transparent', color:activeAction==='send'?C.text:C.sub }}>Dispense Pocket Money</button>
-              <button type="button" onClick={() => setActiveAction('limit')} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='limit'?C.card:'transparent', color:activeAction==='limit'?C.text:C.sub }}>Impose Ceiling Cap</button>
-              <button type="button" onClick={() => setActiveAction('status')} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='status'?C.card:'transparent', color:activeAction==='status'?C.text:C.sub }}>Lock/Unlock Node</button>
+              <button type="button" onClick={() => { setActiveAction('send');   setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='send'?C.card:'transparent',   color:activeAction==='send'?C.text:C.sub   }}>Dispense Pocket Money</button>
+              <button type="button" onClick={() => { setActiveAction('limit');  setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='limit'?C.card:'transparent',  color:activeAction==='limit'?C.text:C.sub  }}>Impose Ceiling Cap</button>
+              <button type="button" onClick={() => { setActiveAction('status'); setErr(''); setSuccess(''); }} style={{ flex:1, padding:6, fontSize:12, fontWeight:600, border:'none', borderRadius:6, cursor:'pointer', background:activeAction==='status'?C.card:'transparent', color:activeAction==='status'?C.text:C.sub }}>Lock/Unlock Node</button>
             </div>
 
             <Alert text={err} type="error" />
@@ -1113,16 +1147,16 @@ function ParentDash({ token, user }) {
                   </select>
                 </div>
 
-                {activeAction === 'send' && <Input label="Disbursement Amount (Rs.)" type="number" value={sendAmount} onChange={setSendAmount} placeholder="Value to add to dependent node balance" />}
-                {activeAction === 'limit' && <Input label="Monthly Outflow Ceiling Cap (Rs.)" type="number" value={limitAmount} onChange={setLimitAmount} placeholder="Enter ceiling constraint threshold value" />}
+                {activeAction === 'send'   && <Input label="Disbursement Amount (Rs.)" type="number" value={sendAmount} onChange={setSendAmount} placeholder="Value to add to dependent node balance" />}
+                {activeAction === 'limit'  && <Input label="Monthly Outflow Ceiling Cap (Rs.)" type="number" value={limitAmount} onChange={setLimitAmount} placeholder="Enter ceiling constraint threshold value" />}
                 {activeAction === 'status' && (
                   <div style={{ fontSize:13, color:C.sub, padding:14, background:'rgba(255,255,255,0.01)', borderRadius:10, border:`1px solid ${C.border}`, marginBottom:16 }}>
-                    ℹ️ Executing this packet instructions swaps the current operational state of the target student wallet between active and locked.
+                    ℹ️ Executing this packet instruction swaps the current operational state of the target student wallet between active and locked.
                   </div>
                 )}
 
                 <Input label="Secure Secret Guardian PIN Verification" type="password" value={pin} onChange={setPin} placeholder="••••" />
-                <button type="submit" style={{ width:'100%', marginTop:10, ...filled(activeAction==='status'?C.r1 : activeAction==='limit'?C.p2 : C.c1, '13px') }}>
+                <button type="submit" style={{ width:'100%', marginTop:10, ...filled(activeAction==='status' ? C.r1 : activeAction==='limit' ? C.p2 : C.c1, '13px') }}>
                   {activeAction === 'send' ? 'Execute Sovereign Transfer' : activeAction === 'limit' ? 'Impose Ceiling Packet' : 'Toggle Operational Privilege'}
                 </button>
               </form>
@@ -1141,7 +1175,7 @@ function ParentReports({ token }) {
   const [reports, setReports] = useState([]);
   useEffect(() => {
     fetch('/api/parent/children?action=GET_REPORTS', { headers:{ 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if(d.reports) setReports(d.reports); });
+      .then(r => r.json()).then(d => { if (d.reports) setReports(d.reports); });
   }, [token]);
 
   return (
@@ -1222,7 +1256,7 @@ function NotificationsBox({ token }) {
   const [alerts, setAlerts] = useState([]);
   const fetchAlerts = useCallback(() => {
     fetch('/api/notifications', { headers:{ 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if(d.notifications) setAlerts(d.notifications); });
+      .then(r => r.json()).then(d => { if (d.notifications) setAlerts(d.notifications); });
   }, [token]);
 
   useEffect(() => { fetchAlerts(); }, [fetchAlerts]);
@@ -1241,7 +1275,7 @@ function NotificationsBox({ token }) {
           {alerts.map(a => (
             <div key={a.id} style={{ background:a.type==='CRITICAL'?'rgba(239,68,68,0.06)':'rgba(245,158,11,0.06)', border:`1px solid ${a.type==='CRITICAL'?C.r1:C.a1}`, padding:10, borderRadius:10, fontSize:12 }}>
               <div style={{ fontWeight:700, color:a.type==='CRITICAL'?C.r1:C.a1, display:'flex', gap:6, alignItems:'center', marginBottom:2 }}>
-                <span>{a.type==='CRITICAL'?'🚨 SYSTEM IMPOSING LIMIT':'⚠️ CONSTRAINT RE-ROUTE ALERT'}</span>
+                <span>{a.type==='CRITICAL' ? '🚨 SYSTEM IMPOSING LIMIT' : '⚠️ CONSTRAINT RE-ROUTE ALERT'}</span>
               </div>
               <div style={{ color:C.text, lineHeight:1.4 }}>{a.message}</div>
             </div>
