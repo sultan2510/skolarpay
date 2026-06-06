@@ -1,13 +1,8 @@
 // pages/api/dev/topup.js
-// ⚠️ DEVELOPMENT ONLY — remove before production
 import { withAuth } from '../../../lib/auth';
 import { db } from '../../../lib/db';
 
 async function handler(req, res) {
-  if (process.env.NODE_ENV === 'production') {
-    return res.status(403).json({ error: 'Not available in production' });
-  }
-
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const user = req.user;
