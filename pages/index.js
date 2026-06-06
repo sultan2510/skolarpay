@@ -220,6 +220,18 @@ export default function MainApp() {
     return <AuthScreen onLogin={(t) => { setToken(t); fetchProfile(t); }} />;
   }
 
+  // Token exists but user not yet loaded — show loading
+  if (!user) {
+    return (
+      <div style={{ background:C.dark, minHeight:'100vh', display:'flex', justifyContent:'center', alignItems:'center', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:28, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:10 }}>SkolarPay</div>
+          <div style={{ color:C.sub, fontSize:13 }}>Loading your account...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif', display:'flex' }}>
 
