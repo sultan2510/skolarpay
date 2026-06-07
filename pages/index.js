@@ -148,6 +148,7 @@ export default function MainApp() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('sp_token');
@@ -232,65 +233,78 @@ export default function MainApp() {
     );
   }
 
-  return (
-    <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif', display:'flex' }}>
-
-      {/* ── SIDEBAR NAVIGATION ── */}
-      <div style={{ width:260, background:C.mid, borderRight:`1px solid ${C.border}`, padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
-
-        {/* Top nav links */}
+  // Shared sidebar nav content
+  const SidebarNav = ({ onNavClick }) => {
+    const go = (s) => { setScreen(s); if(onNavClick) onNavClick(); };
+    return (
+      <>
         <div>
           <div style={{ fontSize:22, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:35, paddingLeft:10 }}>SkolarPay</div>
-
           <div style={{ color:C.sub, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, paddingLeft:10, marginBottom:12 }}>Workspace</div>
-
           {user?.role === 'parent' ? (
             <>
-              <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => setScreen('p_dash')} />
-              <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => setScreen('p_reports')} />
+              <NavBtn active={screen==='p_dash'}    icon="👨‍👩‍👦" label="Parent Dashboard"  onClick={() => go('p_dash')} />
+              <NavBtn active={screen==='p_reports'} icon="📈"     label="Spending Reports" onClick={() => go('p_reports')} />
             </>
           ) : (
             <>
-              <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => setScreen('dashboard')} />
-              <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => setScreen('wallet')} />
-              <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => setScreen('pay')} />
-              <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => setScreen('budget')} />
-              <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => setScreen('goals')} />
-              <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => setScreen('analytics')} />
-              <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => setScreen('reports')} />
+              <NavBtn active={screen==='dashboard'} icon="🔮" label="Overview"        onClick={() => go('dashboard')} />
+              <NavBtn active={screen==='wallet'}    icon="💳" label="Digital Wallet"  onClick={() => go('wallet')} />
+              <NavBtn active={screen==='pay'}       icon="⚡" label="Bills & Topup"   onClick={() => go('pay')} />
+              <NavBtn active={screen==='budget'}    icon="📅" label="Semester Budget" onClick={() => go('budget')} />
+              <NavBtn active={screen==='goals'}     icon="🎯" label="Savings Goals"   onClick={() => go('goals')} />
+              <NavBtn active={screen==='analytics'} icon="📊" label="Analytics"       onClick={() => go('analytics')} />
+              <NavBtn active={screen==='reports'}   icon="📝" label="Statements"      onClick={() => go('reports')} />
             </>
           )}
-          <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => setScreen('profile')} />
+          <NavBtn active={screen==='profile'} icon="⚙️" label="Account Security" onClick={() => go('profile')} />
         </div>
-
-        {/* ── USER TAG AT BOTTOM ── */}
         <div style={glass({ padding:14, display:'flex', alignItems:'center', justifyContent:'space-between' })}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            {/* Avatar Bubble */}
             <div style={{ width:34, height:34, borderRadius:10, background: user?.role==='parent' ? C.c1 : C.p1, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>
               {user?.name ? user.name[0].toUpperCase() : 'U'}
             </div>
-            {/* User Name & Role */}
             <div>
-              <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {user?.name || 'Guest'}
-              </div>
-              <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>
-                {user?.role ? `${user.role} account` : 'Logged Out'}
-              </div>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name || 'Guest'}</div>
+              <div style={{ fontSize:11, color:C.sub, textTransform:'capitalize' }}>{user?.role ? `${user.role} account` : 'Logged Out'}</div>
             </div>
           </div>
-          {/* Logout Button */}
-          <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>
-            🚪
-          </button>
+          <button onClick={logout} style={{ background:'none', border:'none', color:C.r1, cursor:'pointer', fontSize:16 }}>🚪</button>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div style={{ background:C.dark, minHeight:'100vh', color:C.text, fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
+
+      {/* ── MOBILE TOP BAR ── */}
+      <div className="sp-mobile-bar" style={{ display:'none', position:'sticky', top:0, zIndex:100, background:C.mid, borderBottom:`1px solid ${C.border}`, padding:'14px 20px', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ fontSize:18, fontWeight:900, background:`linear-gradient(135deg, ${C.pl}, ${C.p1})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>SkolarPay</div>
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ background:'none', border:`1px solid ${C.border}`, color:C.text, borderRadius:8, padding:'6px 14px', cursor:'pointer', fontSize:18 }}>
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </div>
+
+      {/* ── MOBILE DRAWER ── */}
+      {mobileMenuOpen && (
+        <div onClick={() => setMobileMenuOpen(false)} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:270, background:C.mid, height:'100%', padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between', borderRight:`1px solid ${C.border}` }}>
+            <SidebarNav onNavClick={() => setMobileMenuOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex' }}>
+        {/* ── DESKTOP SIDEBAR ── */}
+        <div className="sp-sidebar" style={{ width:260, minWidth:260, background:C.mid, borderRight:`1px solid ${C.border}`, padding:'30px 20px', display:'flex', flexDirection:'column', justifyContent:'space-between', minHeight:'100vh', flexShrink:0 }}>
+          <SidebarNav />
         </div>
 
-      </div>{/* end sidebar */}
-
-      {/* ── MAIN DATA VIEW AREA ── */}
-      <div style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
-        {renderScreen()}
+        {/* ── MAIN CONTENT ── */}
+        <div className="sp-main" style={{ flex:1, padding:40, overflowY:'auto', maxHeight:'100vh' }}>
+          {renderScreen()}
+        </div>
       </div>
 
     </div>
@@ -859,14 +873,19 @@ function AnalyticsScreen({ token }) {
 
   if (!data) return <div style={{ color:C.sub }}>Loading analytics...</div>;
 
+  // Map API fields to UI-friendly names
+  const breakdown = data.by_category
+    ? Object.entries(data.by_category).map(([category, amount]) => ({ category, amount }))
+    : [];
+
   return (
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Spending Analytics</h1>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1.2fr', gap:24 }}>
         <Card title="Spending by Category">
-          {data.breakdown && data.breakdown.length > 0 ? (
+          {breakdown.length > 0 ? (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-              {data.breakdown.map(b => {
+              {breakdown.map(b => {
                 const catObj = CATEGORIES.find(c => c.id === b.category) || { icon:'💸', label:b.category, color:C.p2 };
                 return (
                   <div key={b.category}>
@@ -874,9 +893,9 @@ function AnalyticsScreen({ token }) {
                       <span style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600 }}>
                         <span>{catObj.icon}</span> {catObj.label}
                       </span>
-                      <span style={{ fontWeight:700 }}>Rs. {b._sum.amount.toLocaleString()}</span>
+                      <span style={{ fontWeight:700 }}>Rs. {b.amount.toLocaleString()}</span>
                     </div>
-                    <ProgressBar value={b._sum.amount} max={data.totalSpent || 1} color={catObj.color} />
+                    <ProgressBar value={b.amount} max={data.total_spent || 1} color={catObj.color} />
                   </div>
                 );
               })}
@@ -890,11 +909,11 @@ function AnalyticsScreen({ token }) {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
             <div style={glass({ padding:16, borderLeft:`4px solid ${C.p1}` })}>
               <div style={{ fontSize:12, color:C.sub }}>Total Spent</div>
-              <div style={{ fontSize:22, fontWeight:800, color:C.text, marginTop:4 }}>Rs. {data.totalSpent?.toLocaleString() || 0}</div>
+              <div style={{ fontSize:22, fontWeight:800, color:C.text, marginTop:4 }}>Rs. {(data.total_spent || 0).toLocaleString()}</div>
             </div>
             <div style={glass({ padding:16, borderLeft:`4px solid ${C.c1}` })}>
               <div style={{ fontSize:12, color:C.sub }}>Transactions</div>
-              <div style={{ fontSize:22, fontWeight:800, color:C.text, marginTop:4 }}>{data.transactionCount || 0} entries</div>
+              <div style={{ fontSize:22, fontWeight:800, color:C.text, marginTop:4 }}>{data.transactions?.length || 0} entries</div>
             </div>
           </div>
           <div style={{ padding:16, background:'rgba(255,255,255,0.02)', borderRadius:12, border:`1px solid ${C.border}`, fontSize:13, color:C.sub, lineHeight:1.6 }}>
@@ -941,11 +960,11 @@ function ReportsScreen({ token }) {
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
           <div>
             <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Total Spent</div>
-            <div style={{ fontSize:20, fontWeight:800, color:C.r1, marginTop:2 }}>Rs. {data.totalSpent?.toLocaleString() || 0}</div>
+            <div style={{ fontSize:20, fontWeight:800, color:C.r1, marginTop:2 }}>Rs. {(data.total_spent || 0).toLocaleString()}</div>
           </div>
           <div>
             <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Transactions</div>
-            <div style={{ fontSize:20, fontWeight:800, color:C.text, marginTop:2 }}>{data.transactionCount || 0} Logs</div>
+            <div style={{ fontSize:20, fontWeight:800, color:C.text, marginTop:2 }}>{data.transactions?.length || 0} Logs</div>
           </div>
           <div>
             <div style={{ fontSize:11, color:C.sub, textTransform:'uppercase' }}>Status</div>
@@ -955,12 +974,12 @@ function ReportsScreen({ token }) {
 
         <h4 style={{ fontSize:14, fontWeight:700, margin:'0 0 12px 0' }}>Transactions</h4>
         <div style={{ border:`1px solid ${C.border}`, borderRadius:12, overflow:'hidden' }}>
-          {data.rawTransactions && data.rawTransactions.length > 0 ? (
-            data.rawTransactions.map((t, idx) => (
-              <div key={t.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:idx%2===0?'rgba(255,255,255,0.01)':'transparent', borderBottom:idx===data.rawTransactions.length-1?'none':`1px solid ${C.border}` }}>
+          {data.transactions && data.transactions.length > 0 ? (
+            data.transactions.map((t, idx) => (
+              <div key={t.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:idx%2===0?'rgba(255,255,255,0.01)':'transparent', borderBottom:idx===data.transactions.length-1?'none':`1px solid ${C.border}` }}>
                 <div>
                   <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{t.description || 'Transfer'}</div>
-                  <div style={{ fontSize:11, color:C.sub, marginTop:2 }}>{new Date(t.createdAt).toLocaleDateString()} • Ref: {t.id.slice(-8).toUpperCase()}</div>
+                  <div style={{ fontSize:11, color:C.sub, marginTop:2 }}>{new Date(t.created_at).toLocaleDateString()} • Ref: {t.id.slice(-8).toUpperCase()}</div>
                 </div>
                 <div style={{ fontSize:14, fontWeight:700, color:C.text }}>Rs. {t.amount.toLocaleString()}</div>
               </div>
@@ -1185,20 +1204,43 @@ function ParentDash({ token, user }) {
 // ─── PARENT REPORTS MODULE ────────────────────────────────────
 function ParentReports({ token }) {
   const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetch('/api/parent/children?action=GET_REPORTS', { headers:{ 'Authorization': `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if (d.reports) setReports(d.reports); });
+    // Step 1: get all children, then fetch report for each
+    fetch('/api/parent/children', { headers:{ 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(async d => {
+        if (!d.children || d.children.length === 0) { setLoading(false); return; }
+        const results = await Promise.all(
+          d.children.map(c =>
+            fetch(`/api/parent/children?action=GET_REPORTS&child_id=${c.id}`, {
+              headers:{ 'Authorization': `Bearer ${token}` }
+            }).then(r => r.json()).then(rep => ({
+              childId:      c.id,
+              name:         c.name,
+              totalSpent:   rep.total_spent || 0,
+              transactions: rep.transactions || [],
+            }))
+          )
+        );
+        setReports(results);
+        setLoading(false);
+      });
   }, [token]);
 
   return (
     <div>
       <h1 style={{ fontSize:26, fontWeight:800, marginBottom:30 }}>Children's Spending Reports</h1>
       <Card title="Spending Reports">
-        {reports.length === 0 ? (
+        {loading ? (
+          <div style={{ color:C.sub }}>Loading reports...</div>
+        ) : reports.length === 0 ? (
           <div style={{ color:C.sub, fontStyle:'italic' }}>No spending data available yet.</div>
         ) : (
-          reports.map(r => (
-            <div key={r.childId} style={{ marginBottom:25, borderBottom:`1px solid ${C.border}`, paddingBottom:20 }}>
+          <div>
+            {reports.map(r => (
+              <div key={r.childId} style={{ marginBottom:25, borderBottom:`1px solid ${C.border}`, paddingBottom:20 }}>
               <h4 style={{ margin:'0 0 10px 0', fontSize:15, color:C.text }}>Transactions for: {r.name}</h4>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:20 }}>
                 <div style={glass({ padding:14 })}>
@@ -1221,8 +1263,9 @@ function ParentReports({ token }) {
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+              </div>
+            ))}
+          </div>
         )}
       </Card>
     </div>

@@ -12,15 +12,14 @@ body {
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 input, button, select, textarea { font-family: inherit; }
 
-/* ── MOBILE RESPONSIVE ───────────────────────────────────────── */
+/* ── MOBILE ── */
 @media (max-width: 768px) {
   .sp-sidebar     { display: none !important; }
   .sp-mobile-bar  { display: flex !important; }
-  .sp-main        { padding: 16px !important; max-height: unset !important; }
+  .sp-main        { padding: 16px !important; max-height: none !important; }
   .sp-grid-2      { grid-template-columns: 1fr !important; }
   .sp-grid-3      { grid-template-columns: 1fr 1fr !important; }
 }
-
 @media (max-width: 480px) {
   .sp-grid-3      { grid-template-columns: 1fr !important; }
 }
